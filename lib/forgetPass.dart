@@ -124,7 +124,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   },
                 );
               } catch (e) {
-                // If an error occurs, show an error dialog
+                // If an error occurs, show the error dialog
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {

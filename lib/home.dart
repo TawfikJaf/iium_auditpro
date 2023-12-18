@@ -6,6 +6,8 @@ import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 import 'package:iium_auditpro/userProfile.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -56,18 +58,41 @@ class HomePage extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(25),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'Welcome to IIUM AuditPro Dashboard!',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
+              child: FutureBuilder<String>(
+                future: _getFirstName(),
+                builder: (context, snapshot) {
+                  String firstName = snapshot.data ?? '';
+
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    String welcomeMessage =
+                        'Welcome ${firstName.isNotEmpty ? '$firstName ' : ''}to IIUM AuditPro Dashboard!';
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        welcomeMessage,
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }
+                },
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<String> _getFirstName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('firstName') ?? '';
   }
 
   void handleSidebarItemTap(BuildContext context, String title) {
