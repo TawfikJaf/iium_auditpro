@@ -103,7 +103,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 // Send a password reset email
                 await _auth.sendPasswordResetEmail(email: email);
 
-                // Display a success message
+                // Display success message
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
