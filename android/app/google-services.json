@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "1076712230586",
+    "project_id": "iiumauditpro-91d98",
+    "storage_bucket": "iiumauditpro-91d98.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076712230586:android:e4c5aafec9235560b07c83",
+        "android_client_info": {
+          "package_name": "com.example.audit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1076712230586-1ohe3h5gq74f35nth7f74qqcg6j2cluh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKVAESAVmDLAdiuy4kOECHrpimuOYJqIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1076712230586-1ohe3h5gq74f35nth7f74qqcg6j2cluh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1076712230586-gqoqpgb9bi7qufrau2umdnv1s055n1kd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.audit"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076712230586:android:56bb407faa523521b07c83",
+        "android_client_info": {
+          "package_name": "com.example.iium_auditpro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1076712230586-1ohe3h5gq74f35nth7f74qqcg6j2cluh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKVAESAVmDLAdiuy4kOECHrpimuOYJqIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1076712230586-1ohe3h5gq74f35nth7f74qqcg6j2cluh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1076712230586-gqoqpgb9bi7qufrau2umdnv1s055n1kd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.audit"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
