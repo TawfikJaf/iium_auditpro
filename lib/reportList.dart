@@ -58,7 +58,11 @@ class ReportsListPage extends StatelessWidget {
   void handleSidebarItemTap(BuildContext context, String title) {
     if (title == 'Home') {
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
+          context,
+          MaterialPageRoute(
+              builder: (context) => HomePage(
+                    currentPage: 'Home',
+                  )));
       return;
     }
 

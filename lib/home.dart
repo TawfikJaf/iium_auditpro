@@ -17,12 +17,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Home',
-      home: HomePage(),
+      home: HomePage(currentPage: 'Home'), // Pass the current page name here
     );
   }
 }
 
 class HomePage extends StatelessWidget {
+  final String currentPage;
+
+  HomePage({required this.currentPage});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,6 +58,7 @@ class HomePage extends StatelessWidget {
         children: [
           Sidebar(
             onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
+            currentPage: currentPage,
           ),
           Expanded(
             child: Padding(
@@ -236,8 +241,9 @@ class CustomPopupMenu extends StatelessWidget {
 
 class Sidebar extends StatelessWidget {
   final Function(String) onSidebarItemTap;
+  final String? currentPage;
 
-  Sidebar({required this.onSidebarItemTap});
+  Sidebar({required this.onSidebarItemTap, this.currentPage});
 
   @override
   Widget build(BuildContext context) {
@@ -260,18 +266,30 @@ class Sidebar extends StatelessWidget {
             title: 'Home',
             icon: Icons.home,
             onSubItemTap: onSidebarItemTap,
+            isActive: currentPage == 'Home',
+            currentPage: currentPage, // Pass the currentPage to SidebarItem
           ),
           SidebarItem(
             title: 'Reports',
             icon: Icons.library_books,
             subItems: ['Reports List', 'Report Details'],
             onSubItemTap: onSidebarItemTap,
+            isActive: currentPage == 'Reports List' ||
+                currentPage == 'Report Details',
+            keepSubMenuOpen: currentPage == 'Reports List' ||
+                currentPage == 'Report Details',
+            currentPage: currentPage, // Pass the currentPage to SidebarItem
           ),
           SidebarItem(
             title: 'Users',
             icon: Icons.supervised_user_circle,
             subItems: ['User Information', 'User Profile'],
             onSubItemTap: onSidebarItemTap,
+            isActive: currentPage == 'User Information' ||
+                currentPage == 'User Profile',
+            keepSubMenuOpen: currentPage == 'User Information' ||
+                currentPage == 'User Profile',
+            currentPage: currentPage, // Pass the currentPage to SidebarItem
           ),
         ],
       ),
@@ -279,67 +297,110 @@ class Sidebar extends StatelessWidget {
   }
 }
 
-class SidebarItem extends StatelessWidget {
+class SidebarItem extends StatefulWidget {
   final String title;
   final IconData? icon;
   final List<String>? subItems;
   final Function(String) onSubItemTap;
+  final bool isActive; // Add this line
+  final bool keepSubMenuOpen;
+  final String? currentPage; // Add this line
 
   SidebarItem({
     required this.title,
     required this.onSubItemTap,
     this.icon,
     this.subItems,
+    this.isActive = false, // Set a default value
+    this.keepSubMenuOpen = false, // Set a default value
+    this.currentPage, // Add this line
   });
 
   @override
+  _SidebarItemState createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<SidebarItem> {
+  bool isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (title == 'Home') {
+    final baseColor = Color.fromARGB(255, 215, 215, 215);
+    final hoverColor = Colors.white;
+
+    final isActive = widget.title == widget.currentPage ||
+        widget.subItems?.contains(widget.currentPage) == true;
+    final isHoveredOrActive = isHovered || isActive;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: buildItem(baseColor, hoverColor, isHoveredOrActive),
+    );
+  }
+
+  Widget buildItem(Color baseColor, Color hoverColor, bool isHoveredOrActive) {
+    if (widget.title == 'Home') {
       return ListTile(
         title: Row(
           children: [
-            if (icon != null) ...[
-              Icon(icon),
+            if (widget.icon != null) ...[
+              Icon(widget.icon),
               SizedBox(width: 8),
             ],
             Text(
-              title,
-              style: TextStyle(color: Colors.white, fontSize: 20),
+              widget.title,
+              style: TextStyle(
+                color: isHoveredOrActive ? hoverColor : baseColor,
+                fontSize: 20,
+                fontWeight:
+                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ],
         ),
         onTap: () {
-          // Handle the navigation to the homepage
-          onSubItemTap('Home');
+          widget.onSubItemTap(widget.title);
         },
       );
     } else {
       return ExpansionTile(
         title: Row(
           children: [
-            if (icon != null) ...[
-              Icon(icon),
+            if (widget.icon != null) ...[
+              Icon(widget.icon),
               SizedBox(width: 8),
             ],
             Text(
-              title,
-              style: TextStyle(color: Colors.white, fontSize: 20),
+              widget.title,
+              style: TextStyle(
+                color: isHoveredOrActive ? hoverColor : baseColor,
+                fontSize: 20,
+                fontWeight:
+                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ],
         ),
         iconColor: Colors.white,
-        children: subItems?.map((subItem) {
-              return ListTile(
-                title: Text(
-                  subItem,
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  onSubItemTap(subItem);
-                },
-              );
-            }).toList() ??
-            [],
+        initiallyExpanded: widget.keepSubMenuOpen,
+        children: (widget.subItems ?? []).map((subItem) {
+          return ListTile(
+            title: Text(
+              subItem,
+              style:
+                  TextStyle(color: isHoveredOrActive ? hoverColor : baseColor),
+            ),
+            onTap: () {
+              widget.onSubItemTap(subItem);
+            },
+          );
+        }).toList(),
+        onExpansionChanged: (isOpen) {
+          if (!widget.keepSubMenuOpen && !isOpen) {
+            setState(() => isHovered = false);
+          }
+        },
       );
     }
   }

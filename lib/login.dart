@@ -90,7 +90,10 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => HomePage()),
+                    MaterialPageRoute(
+                        builder: (context) => HomePage(
+                              currentPage: 'Home',
+                            )),
                   );
                 }
               } catch (e) {

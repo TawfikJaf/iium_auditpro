@@ -264,7 +264,10 @@ class _ProfilePageState extends State<ProfilePage> {
     if (title == 'Home') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(
+            builder: (context) => HomePage(
+                  currentPage: 'Home',
+                )),
       );
       return;
     }
