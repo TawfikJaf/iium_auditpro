@@ -6,7 +6,8 @@ import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 import 'package:iium_auditpro/userProfile.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() {
   runApp(MyApp());
@@ -51,6 +52,34 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Future<String> _getFirstName() async {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      try {
+        // Fetch user data from Firestore based on email
+        QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+            .instance
+            .collection('profilePage')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        if (snapshot.docs.isNotEmpty) {
+          // User data found in Firestore
+          final userData = snapshot.docs.first.data();
+          return userData['firstName'] ?? '';
+        } else {
+          return ''; // Handle the case when the document is not found
+        }
+      } catch (e) {
+        print('Error loading user data: $e');
+        return ''; // Handle the error case
+      }
+    }
+
+    return ''; // Handle the case when the user is not logged in
+  }
+
   Widget buildBody(BuildContext context) {
     return Container(
       color: Colors.grey[200],
@@ -58,7 +87,6 @@ class HomePage extends StatelessWidget {
         children: [
           Sidebar(
             onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
-            currentPage: currentPage,
           ),
           Expanded(
             child: Padding(
@@ -95,11 +123,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Future<String> _getFirstName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('firstName') ?? '';
-  }
-
   void handleSidebarItemTap(BuildContext context, String title) {
     if (title == 'Home') {
       // No need to navigate, already on the home page
@@ -120,8 +143,13 @@ class HomePage extends StatelessWidget {
             MaterialPageRoute(builder: (context) => UserInformationPage()));
         break;
       case 'User Profile':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserProfilePage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserProfilePage(
+                userData: {}), // Provide default user data or adjust as needed
+          ),
+        );
         break;
     }
   }

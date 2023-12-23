@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
@@ -5,6 +6,8 @@ import 'package:iium_auditpro/profilePage.dart';
 import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userProfile.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserInformationPage extends StatelessWidget {
   @override
@@ -31,6 +34,8 @@ class UserInformationPage extends StatelessWidget {
   }
 
   Widget buildBody(BuildContext context) {
+    TextEditingController searchController = TextEditingController();
+
     return Container(
       color: Colors.grey[200],
       child: Row(
@@ -41,12 +46,23 @@ class UserInformationPage extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(25),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'User Information Page',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'User Information Page',
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: buildSearchField(searchController),
+                  ),
+                  Container(
+                    width: 800, // Set the desired width
+                    child: buildPaginatedUserTable(searchController),
+                  ),
+                ],
               ),
             ),
           ),
@@ -55,34 +71,228 @@ class UserInformationPage extends StatelessWidget {
     );
   }
 
-  void handleSidebarItemTap(BuildContext context, String title) {
-    if (title == 'Home') {
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(
-                    currentPage: 'Home',
-                  )));
-      return;
-    }
+  Widget buildPaginatedUserTable(TextEditingController searchController) {
+    return StreamBuilder(
+      stream:
+          FirebaseFirestore.instance.collection('User Information').snapshots(),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
 
-    switch (title) {
-      case 'Reports List':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportsListPage()));
-        break;
-      case 'Report Details':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportDetailsPage()));
-        break;
-      case 'User Information':
-        // No need to navigate to the same page (User Information Page)
-        return;
-      case 'User Profile':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserProfilePage()));
-        break;
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Text('No user information available.');
+        }
+
+        List<DocumentSnapshot> filteredData =
+            snapshot.data!.docs.where((document) {
+          // Add your filter logic here based on name or matric
+          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+          String name = data['name']?.toString() ?? '';
+          String matricNumber = data['matricNumber']?.toString() ?? '';
+          String searchTerm = searchController.text.toLowerCase();
+          return name.toLowerCase().contains(searchTerm) ||
+              matricNumber.toLowerCase().contains(searchTerm);
+        }).toList();
+
+        final _userDataTableSource =
+            _UserDataTableSource(filteredData, context);
+
+        return PaginatedDataTable(
+          header: Text('User Information'),
+          rowsPerPage: 10,
+          columns: [
+            DataColumn(label: Text('Name')),
+            DataColumn(label: Text('Matric Number')),
+            DataColumn(label: Text('View Information')),
+          ],
+          source: _userDataTableSource,
+        );
+      },
+    );
+  }
+}
+
+class _UserDataTableSource extends DataTableSource {
+  final List<DocumentSnapshot> _userDocuments;
+  final BuildContext context;
+  int _page = 0;
+
+  _UserDataTableSource(this._userDocuments, this.context);
+
+  @override
+  DataRow getRow(int index) {
+    final Map<String, dynamic> data =
+        _userDocuments[index].data() as Map<String, dynamic>;
+
+    return DataRow(
+      cells: [
+        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['matricNumber']?.toString() ?? 'N/A')),
+        DataCell(
+          TextButton(
+            onPressed: () {
+              // Navigate to UserProfilePage with user data
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserProfilePage(userData: data),
+                ),
+              );
+            },
+            child: Text('View Information'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  int get rowCount => _userDocuments.length;
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get selectedRowCount => 0;
+
+  int get pageRowCount => min(rowCount - _page * rowsPerPage, rowsPerPage);
+
+  bool get hasPrevious => _page * rowsPerPage > 0;
+
+  bool get hasNext => (_page + 1) * rowsPerPage < rowCount;
+
+  void previousPage() {
+    if (hasPrevious) {
+      _page--;
     }
+  }
+
+  void nextPage() {
+    if (hasNext) {
+      _page++;
+    }
+  }
+
+  int get rowsPerPage => 10; // Specify the number of rows per page
+}
+
+Widget buildSearchField(TextEditingController searchController) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'Search',
+        style: TextStyle(fontSize: 20),
+      ),
+      SizedBox(height: 8),
+      Container(
+        width: 500,
+        child: TextField(
+          controller: searchController,
+          onChanged: (value) {
+            // Implement search functionality here
+            // You may want to update the StreamBuilder based on the search query
+          },
+          decoration: InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 10),
+            hintText: 'Enter name or Matric Number',
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+Widget buildUserTable() {
+  return StreamBuilder(
+    stream:
+        FirebaseFirestore.instance.collection('User Information').snapshots(),
+    builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return CircularProgressIndicator();
+      }
+
+      if (snapshot.hasError) {
+        return Text('Error: ${snapshot.error}');
+      }
+
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return Text('No user information available.');
+      }
+
+      return DataTable(
+        columns: [
+          DataColumn(label: Text('Name')),
+          DataColumn(label: Text('Matric Number')),
+          DataColumn(label: Text('')),
+        ],
+        rows: snapshot.data!.docs.map((DocumentSnapshot document) {
+          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+          return DataRow(
+            cells: [
+              DataCell(Text(data['name']?.toString() ?? 'N/A')),
+              DataCell(Text(data['matricNumber']?.toString() ?? 'N/A')),
+              DataCell(
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigate to UserProfilePage with user data
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfilePage(userData: data),
+                      ),
+                    );
+                  },
+                  child: Text('View Information'),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      );
+    },
+  );
+}
+
+void handleSidebarItemTap(BuildContext context, String title) {
+  if (title == 'Home') {
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => HomePage(
+                  currentPage: 'Home',
+                )));
+    return;
+  }
+
+  switch (title) {
+    case 'Reports List':
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => ReportsListPage()));
+      break;
+    case 'Report Details':
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => ReportDetailsPage()));
+      break;
+    case 'User Information':
+      // No need to navigate to the same page (User Information Page)
+      return;
+    case 'User Profile':
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserProfilePage(
+              userData: {}), // Provide default user data or adjust as needed
+        ),
+      );
+      break;
   }
 }
 

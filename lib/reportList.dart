@@ -79,8 +79,13 @@ class ReportsListPage extends StatelessWidget {
             MaterialPageRoute(builder: (context) => UserInformationPage()));
         break;
       case 'User Profile':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserProfilePage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserProfilePage(
+                userData: {}), // Provide default user data or adjust as needed
+          ),
+        );
         break;
     }
   }

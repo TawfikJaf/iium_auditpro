@@ -7,6 +7,9 @@ import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 
 class UserProfilePage extends StatelessWidget {
+  final Map<String, dynamic> userData;
+
+  UserProfilePage({required this.userData});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -6,7 +6,7 @@ import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -19,8 +19,9 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
 
-  late String initialFirstName;
-  late String initialLastName;
+  late String initialFirstName = ''; // Initialize with an empty string
+  late String initialLastName = ''; // Initialize with an empty string
+  late String uid;
 
   @override
   void initState() {
@@ -49,29 +50,86 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    initialFirstName = prefs.getString('firstName') ?? '';
-    initialLastName = prefs.getString('lastName') ?? '';
+    User? user = FirebaseAuth.instance.currentUser;
 
-    setState(() {
-      _firstNameController.text = initialFirstName;
-      _lastNameController.text = initialLastName;
-    });
+    if (user != null) {
+      setState(() {
+        uid = user.uid;
+      });
+
+      try {
+        // Fetch user data from Firestore based on email
+        QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+            .instance
+            .collection('profilePage')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        if (snapshot.docs.isNotEmpty) {
+          // User data found in Firestore
+          final userData = snapshot.docs.first.data();
+          setState(() {
+            initialFirstName = userData['firstName'] ?? '';
+            initialLastName = userData['lastName'] ?? '';
+            _firstNameController.text = initialFirstName;
+            _lastNameController.text = initialLastName;
+          });
+        } else {
+          // Document does not exist, create a new document with email as ID
+          await FirebaseFirestore.instance
+              .collection('profilePage')
+              .doc(user.email)
+              .set({
+            'firstName': '',
+            'lastName': '',
+            // Add other fields as needed
+            'email': user.email,
+          });
+
+          // Set initial values to empty strings
+          setState(() {
+            initialFirstName = '';
+            initialLastName = '';
+          });
+        }
+      } catch (e) {
+        print('Error loading user data: $e');
+      }
+    }
   }
 
   Future<void> _saveUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    User? user = FirebaseAuth.instance.currentUser;
 
-    String newFirstName = _firstNameController.text;
-    String newLastName = _lastNameController.text;
+    if (user != null) {
+      setState(() {
+        uid = user.uid;
+      });
 
-    if (newFirstName != initialFirstName || newLastName != initialLastName) {
-      prefs.setString('firstName', newFirstName);
-      prefs.setString('lastName', newLastName);
+      String newFirstName = _firstNameController.text;
+      String newLastName = _lastNameController.text;
 
-      _showSuccessDialog(context);
-    } else {
-      _showNoChangeDialog(context);
+      if (newFirstName != initialFirstName || newLastName != initialLastName) {
+        try {
+          // Update user data in Firestore based on email
+          await FirebaseFirestore.instance
+              .collection('profilePage')
+              .doc(user.email)
+              .update({
+            'firstName': newFirstName,
+            'lastName': newLastName,
+          });
+
+          print('Debug: User data updated successfully');
+          _showSuccessDialog(context);
+        } catch (e) {
+          print('Error updating user data: $e');
+          _showErrorDialog(
+              context, 'Failed to update user data. Please try again.');
+        }
+      } else {
+        _showNoChangeDialog(context);
+      }
     }
   }
 
@@ -86,6 +144,26 @@ class _ProfilePageState extends State<ProfilePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the error dialog
               },
               child: Text('OK'),
             ),
@@ -205,8 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         await _saveUserData();
-                        // Show success dialog
-                        _showSuccessDialog(context);
+                        // Do not call _showSuccessDialog here
                       },
                       child: Padding(
                         padding:
