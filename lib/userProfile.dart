@@ -10,6 +10,7 @@ class UserProfilePage extends StatelessWidget {
   final Map<String, dynamic> userData;
 
   UserProfilePage({required this.userData});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,6 +28,8 @@ class UserProfilePage extends StatelessWidget {
           Spacer(),
         ],
       ),
+      iconTheme:
+          IconThemeData(color: Colors.white), // Set back button color to white
       actions: [
         CustomPopupMenu(),
       ],
@@ -35,7 +38,7 @@ class UserProfilePage extends StatelessWidget {
 
   Widget buildBody(BuildContext context) {
     return Container(
-      color: Colors.grey[200],
+      color: Colors.grey[200], // Set the overall background color
       child: Row(
         children: [
           Sidebar(
@@ -44,14 +47,129 @@ class UserProfilePage extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(25),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'User Profile Page',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'User Profile Page',
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                  Container(
+                    color: Colors
+                        .grey[100], // Set the background color for this part
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.arrow_back),
+                              onPressed: () {
+                                Navigator.pop(
+                                    context); // Navigate back to User Information page
+                              },
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Back',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: buildInfoBox("Name", userData['name']),
+                            ),
+                            SizedBox(width: 20),
+                            Expanded(
+                              child: buildInfoBox(
+                                "Matric Number",
+                                userData['matricNumber'],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: buildInfoBox("Email", userData['email']),
+                            ),
+                            SizedBox(width: 20),
+                            Expanded(
+                              child: buildInfoBox(
+                                "Password",
+                                "********", // Display a placeholder for the password
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 100),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Handle delete button click
+                              // You can add logic to delete the user
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.red,
+                              padding: EdgeInsets.symmetric(
+                                vertical: 20, // Adjust the vertical padding
+                                horizontal: 40, // Adjust the horizontal padding
+                              ),
+                            ),
+                            child: Text(
+                              'Delete Account',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18, // Adjust the font size
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildInfoBox(String label, String? value) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 5),
+          Text(
+            value ?? 'N/A', // Display 'N/A' if the value is null
+            style: TextStyle(fontSize: 16),
           ),
         ],
       ),

@@ -18,7 +18,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Home',
-      home: HomePage(currentPage: 'Home'), // Pass the current page name here
+      theme: ThemeData(
+        appBarTheme: AppBarTheme(
+          iconTheme: IconThemeData(
+              color: Colors.white), // Set back button color to white
+        ),
+      ),
+      home: HomePage(currentPage: 'Home'),
     );
   }
 }
@@ -46,6 +52,8 @@ class HomePage extends StatelessWidget {
           Spacer(),
         ],
       ),
+      iconTheme:
+          IconThemeData(color: Colors.white), // Set back button color to white
       actions: [
         CustomPopupMenu(),
       ],

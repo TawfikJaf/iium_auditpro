@@ -27,6 +27,8 @@ class UserInformationPage extends StatelessWidget {
           Spacer(),
         ],
       ),
+      iconTheme:
+          IconThemeData(color: Colors.white), // Set back button color to white
       actions: [
         CustomPopupMenu(),
       ],
@@ -54,13 +56,17 @@ class UserInformationPage extends StatelessWidget {
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  Container(
+                    width: 500,
                     child: buildSearchField(searchController),
                   ),
-                  Container(
-                    width: 800, // Set the desired width
-                    child: buildPaginatedUserTable(searchController),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        buildPaginatedUserTable(searchController),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -103,12 +109,11 @@ class UserInformationPage extends StatelessWidget {
             _UserDataTableSource(filteredData, context);
 
         return PaginatedDataTable(
-          header: Text('User Information'),
           rowsPerPage: 10,
           columns: [
             DataColumn(label: Text('Name')),
             DataColumn(label: Text('Matric Number')),
-            DataColumn(label: Text('View Information')),
+            DataColumn(label: Text('')),
           ],
           source: _userDataTableSource,
         );
@@ -210,76 +215,31 @@ Widget buildSearchField(TextEditingController searchController) {
   );
 }
 
-Widget buildUserTable() {
-  return StreamBuilder(
-    stream:
-        FirebaseFirestore.instance.collection('User Information').snapshots(),
-    builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return CircularProgressIndicator();
-      }
-
-      if (snapshot.hasError) {
-        return Text('Error: ${snapshot.error}');
-      }
-
-      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-        return Text('No user information available.');
-      }
-
-      return DataTable(
-        columns: [
-          DataColumn(label: Text('Name')),
-          DataColumn(label: Text('Matric Number')),
-          DataColumn(label: Text('')),
-        ],
-        rows: snapshot.data!.docs.map((DocumentSnapshot document) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          return DataRow(
-            cells: [
-              DataCell(Text(data['name']?.toString() ?? 'N/A')),
-              DataCell(Text(data['matricNumber']?.toString() ?? 'N/A')),
-              DataCell(
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate to UserProfilePage with user data
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserProfilePage(userData: data),
-                      ),
-                    );
-                  },
-                  child: Text('View Information'),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      );
-    },
-  );
-}
-
 void handleSidebarItemTap(BuildContext context, String title) {
   if (title == 'Home') {
     Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => HomePage(
-                  currentPage: 'Home',
-                )));
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(
+          currentPage: 'Home',
+        ),
+      ),
+    );
     return;
   }
 
   switch (title) {
     case 'Reports List':
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => ReportsListPage()));
+        context,
+        MaterialPageRoute(builder: (context) => ReportsListPage()),
+      );
       break;
     case 'Report Details':
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => ReportDetailsPage()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ReportDetailsPage()),
+      );
       break;
     case 'User Information':
       // No need to navigate to the same page (User Information Page)
@@ -289,7 +249,8 @@ void handleSidebarItemTap(BuildContext context, String title) {
         context,
         MaterialPageRoute(
           builder: (context) => UserProfilePage(
-              userData: {}), // Provide default user data or adjust as needed
+            userData: {}, // Provide default user data or adjust as needed
+          ),
         ),
       );
       break;
@@ -363,8 +324,8 @@ class CustomPopupMenu extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) =>
-                      WelcomeScreen()), // Redirect to WelcomeScreen
+                builder: (context) => WelcomeScreen(),
+              ),
             );
           }
         }

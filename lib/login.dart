@@ -91,9 +91,10 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => HomePage(
-                              currentPage: 'Home',
-                            )),
+                      builder: (context) => HomePage(
+                        currentPage: 'Home',
+                      ),
+                    ),
                   );
                 }
               } catch (e) {
@@ -117,7 +118,15 @@ class _LoginPageState extends State<LoginPage> {
                 );
               }
             },
-            child: Text('Login'),
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
           ),
           SizedBox(height: 35),
           // Horizontal line
@@ -137,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
               );
             },
             child: Text(
-              'Forgot Password? Click here',
+              'Forget Password',
               style: TextStyle(
                 color: Colors.grey,
                 fontWeight: FontWeight.bold,

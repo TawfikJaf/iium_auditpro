@@ -190,6 +190,8 @@ class _ProfilePageState extends State<ProfilePage> {
           Spacer(),
         ],
       ),
+      iconTheme:
+          IconThemeData(color: Colors.white), // Set back button color to white
       actions: [
         CustomPopupMenu(),
       ],
@@ -271,7 +273,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     );
                   },
-                  child: Text('Edit Password'),
+                  style: ButtonStyle(
+                    backgroundColor:
+                        MaterialStateProperty.all<Color>(Colors.blue),
+                  ),
+                  child: Text(
+                    'Edit Password',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
                 SizedBox(
                   height: 30,
@@ -285,12 +294,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         await _saveUserData();
                         // Do not call _showSuccessDialog here
                       },
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.blue),
+                      ),
                       child: Padding(
                         padding:
                             EdgeInsets.symmetric(horizontal: 50, vertical: 10),
                         child: Text(
                           'Save Changes',
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
                       ),
                     ),
@@ -532,7 +545,10 @@ class _EditPasswordDialogState extends State<EditPasswordDialog> {
           onPressed: () {
             _showConfirmationDialog(context);
           },
-          child: Text('Save'),
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+          ),
+          child: Text('Save', style: TextStyle(color: Colors.white)),
         ),
       ],
     );
@@ -613,7 +629,13 @@ class _EditPasswordDialogState extends State<EditPasswordDialog> {
                       context, 'Failed to change password. Please try again.');
                 }
               },
-              child: Text('Save'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+              ),
+              child: Text(
+                'Save',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );

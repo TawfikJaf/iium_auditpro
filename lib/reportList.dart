@@ -24,6 +24,8 @@ class ReportsListPage extends StatelessWidget {
           Spacer(),
         ],
       ),
+      iconTheme:
+          IconThemeData(color: Colors.white), // Set back button color to white
       actions: [
         CustomPopupMenu(),
       ],

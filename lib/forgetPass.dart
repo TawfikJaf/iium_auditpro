@@ -145,7 +145,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 );
               }
             },
-            child: Text('Submit'),
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+            ),
+            child: Text(
+              'Submit',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
