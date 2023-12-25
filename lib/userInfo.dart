@@ -94,9 +94,15 @@ class UserInformationPage extends StatelessWidget {
           return Text('No user information available.');
         }
 
-        List<DocumentSnapshot> filteredData =
-            snapshot.data!.docs.where((document) {
-          // Add your filter logic here based on name or matric
+        List<DocumentSnapshot> userData = snapshot.data!.docs;
+
+        // Perform case-insensitive sorting by name
+        userData.sort((a, b) => (a['name'] as String)
+            .toLowerCase()
+            .compareTo((b['name'] as String).toLowerCase()));
+
+        // Apply search filter
+        List<DocumentSnapshot> filteredData = userData.where((document) {
           Map<String, dynamic> data = document.data() as Map<String, dynamic>;
           String name = data['name']?.toString() ?? '';
           String matricNumber = data['matricNumber']?.toString() ?? '';

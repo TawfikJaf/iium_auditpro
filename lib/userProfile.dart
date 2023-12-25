@@ -6,6 +6,8 @@ import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserProfilePage extends StatelessWidget {
   final Map<String, dynamic> userData;
 
@@ -54,10 +56,21 @@ class UserProfilePage extends StatelessWidget {
                     'User Profile Page',
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 40),
                   Container(
-                    color: Colors
-                        .grey[100], // Set the background color for this part
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius:
+                          BorderRadius.circular(20), // Adjust the border radius
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
                     padding: EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,8 +125,8 @@ class UserProfilePage extends StatelessWidget {
                         Center(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Handle delete button click
-                              // You can add logic to delete the user
+                              // Show confirmation dialog
+                              showDeleteConfirmationDialog(context);
                             },
                             style: ElevatedButton.styleFrom(
                               primary: Colors.red,
@@ -141,6 +154,101 @@ class UserProfilePage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> showDeleteConfirmationDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Confirm Deletion',
+            style: TextStyle(color: Colors.red),
+          ),
+          content: Text('Are you sure you want to delete this account?'),
+          contentPadding: EdgeInsets.all(24),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Delete the user from Firestore
+                await deleteUserFromFirestore();
+
+                // Show success dialog
+                Navigator.of(context).pop(); // Close the confirmation dialog
+                showDeleteSuccessDialog(context);
+              },
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showDeleteSuccessDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Deleted Successfully',
+            style: TextStyle(color: Colors.green),
+          ),
+          content: Text('This account has been successfully deleted.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the success dialog
+                Navigator.of(context).pop(); // Close the User Profile page
+
+                // If you want to navigate to the User Information page after deletion,
+                // you can uncomment the line below and replace UserInformationPage()
+                // with the appropriate page.
+                // Navigator.pushReplacement(
+                //     context,
+                //     MaterialPageRoute(builder: (context) => UserInformationPage()));
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Method to delete the user from Firestore
+  Future<void> deleteUserFromFirestore() async {
+    // Assuming 'userInformation' is your Firestore collection for user information
+    final CollectionReference userInformation =
+        FirebaseFirestore.instance.collection('User Information');
+
+    try {
+      // Use the user's email to identify and delete the user
+      QuerySnapshot querySnapshot = await userInformation
+          .where('email', isEqualTo: userData['email'])
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Delete the user document if found
+        await userInformation.doc(querySnapshot.docs.first.id).delete();
+        // Handle success or navigate to welcome screen
+      } else {
+        // User not found
+        print('User not found for email: ${userData['email']}');
+      }
+    } catch (e) {
+      // Handle errors
+      print('Error deleting user: $e');
+    }
   }
 
   Widget buildInfoBox(String label, String? value) {
