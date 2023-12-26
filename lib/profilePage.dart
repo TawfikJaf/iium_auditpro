@@ -370,11 +370,8 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         break;
       case 'Report Details':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ReportDetailsPage()),
-        );
-        break;
+        // Do not navigate to ReportDetailsPage without selected data
+        return;
       case 'User Information':
         Navigator.push(
           context,

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
 import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/userInfo.dart';
 import 'package:iium_auditpro/userProfile.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReportsListPage extends StatelessWidget {
   @override
@@ -24,8 +28,7 @@ class ReportsListPage extends StatelessWidget {
           Spacer(),
         ],
       ),
-      iconTheme:
-          IconThemeData(color: Colors.white), // Set back button color to white
+      iconTheme: IconThemeData(color: Colors.white),
       actions: [
         CustomPopupMenu(),
       ],
@@ -43,12 +46,28 @@ class ReportsListPage extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(25),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'Reports List Page',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reports List Page',
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                  Container(
+                    width: 500,
+                    child: buildSearchField(),
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: SizedBox(
+                      width: 1700, // Set the desired width
+                      child: Container(
+                        child: buildPaginatedReportsTable(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -57,39 +76,246 @@ class ReportsListPage extends StatelessWidget {
     );
   }
 
-  void handleSidebarItemTap(BuildContext context, String title) {
-    if (title == 'Home') {
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(
-                    currentPage: 'Home',
-                  )));
-      return;
-    }
+  Widget buildSearchField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Search',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: 500,
+          child: TextField(
+            onChanged: (value) {
+              // Implement search functionality here
+              // You may want to update the StreamBuilder based on the search query
+            },
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 10),
+              hintText: 'Enter report name or location',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-    switch (title) {
-      case 'Reports List':
-        // No need to navigate to the same page (Reports List Page)
-        return;
-      case 'Report Details':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportDetailsPage()));
-        break;
-      case 'User Information':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserInformationPage()));
-        break;
-      case 'User Profile':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserProfilePage(
-                userData: {}), // Provide default user data or adjust as needed
+  Widget buildPaginatedReportsTable() {
+    return FutureBuilder(
+      future: _fetchReportsData(),
+      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text('No reports available.');
+        }
+
+        List<Map<String, dynamic>> reportsData = snapshot.data!;
+
+        final _reportsDataTableSource = _ReportsDataTableSource(
+          reportsData: reportsData,
+          onViewDetails: (Map<String, dynamic> reportDetails) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ReportDetailsPage(reportDetails: reportDetails),
+              ),
+            );
+          },
+        );
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: PaginatedDataTable(
+            rowsPerPage: 10,
+            columns: [
+              DataColumn(
+                label: Text(
+                  'Name',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Location',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Date',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Status',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+            source: _reportsDataTableSource,
+            dataRowHeight: 55, // Set your desired row height
           ),
         );
-        break;
-    }
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchReportsData() async {
+    List<Map<String, dynamic>> combinedReportsData = [];
+
+    await _fetchCollectionData(
+        'reportsFacility', combinedReportsData, 'facility');
+    await _fetchCollectionData(
+        'reportsKulliyah', combinedReportsData, 'kulliyah');
+    await _fetchCollectionData(
+        'reportsMahallah', combinedReportsData, 'mahallah');
+    await _fetchCollectionData('reportsOther', combinedReportsData, 'other');
+
+    // TODO: Add any additional sorting, filtering, or customization if needed
+
+    return combinedReportsData;
+  }
+
+  Future<void> _fetchCollectionData(
+      String collectionName,
+      List<Map<String, dynamic>> combinedReportsData,
+      String locationFieldName) async {
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection(collectionName).get();
+
+    querySnapshot.docs.forEach((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+      if (data.containsKey('time')) {
+        // Check if the 'time' field is present in the document
+        print('Timestamp field found: ${data['time']}');
+
+        // Ensure the 'time' field is not null
+        if (data['time'] != null) {
+          Timestamp timestamp = data['time'] as Timestamp;
+          print('Fetched Timestamp: $timestamp');
+
+          data['location'] = data[locationFieldName];
+          combinedReportsData.add(data);
+        } else {
+          print('Warning: Timestamp field is null.');
+        }
+      } else {
+        print('Warning: Timestamp field not found in the document.');
+      }
+    });
+
+    // Sort the list based on the timestamp in descending order
+    combinedReportsData.sort((a, b) {
+      Timestamp timestampA = a['time'] as Timestamp;
+      Timestamp timestampB = b['time'] as Timestamp;
+      return timestampB.compareTo(timestampA);
+    });
+  }
+}
+
+class _ReportsDataTableSource extends DataTableSource {
+  final List<Map<String, dynamic>> reportsData;
+  final Function(Map<String, dynamic>) onViewDetails;
+
+  _ReportsDataTableSource({
+    required this.reportsData,
+    required this.onViewDetails,
+  });
+
+  @override
+  DataRow getRow(int index) {
+    final Map<String, dynamic> data = reportsData[index];
+    final Timestamp timestamp = data['time'] as Timestamp;
+
+    return DataRow(
+      cells: [
+        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['location']?.toString() ?? 'N/A')),
+        DataCell(Text(_formatDate(timestamp))),
+        DataCell(Text(data['status']?.toString() ?? 'N/A')),
+        DataCell(
+          TextButton(
+            onPressed: () {
+              onViewDetails(data);
+            },
+            child: Text('View Details'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return DateFormat('dd/MM/yyyy').format(dateTime);
+  }
+
+  @override
+  int get rowCount => reportsData.length;
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get selectedRowCount => 0;
+}
+
+void handleSidebarItemTap(BuildContext context, String title) {
+  if (title == 'Home') {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(
+          currentPage: 'Home',
+        ),
+      ),
+    );
+    return;
+  }
+
+  switch (title) {
+    case 'Reports List':
+      // No need to navigate to the same page (Reports List Page)
+      return;
+    case 'Report Details':
+      // Do not navigate to ReportDetailsPage without selected data
+      return;
+    case 'User Information':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => UserInformationPage()),
+      );
+      break;
+    case 'User Profile':
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserProfilePage(
+            userData: {}, // Provide default user data or adjust as needed
+          ),
+        ),
+      );
+      break;
   }
 }
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
@@ -6,90 +8,263 @@ import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 import 'package:iium_auditpro/userProfile.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ReportDetailsPage extends StatelessWidget {
+  final Map<String, dynamic> reportDetails;
+
+  ReportDetailsPage({required this.reportDetails});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildAppBar(context),
-      body: buildBody(context),
+      body: Container(
+        color: Colors.grey[200], // Set the overall background color
+        child: Row(
+          children: [
+            // Fixed Sidebar
+            Sidebar(
+              onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
+            ),
+            // Scrollable Content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Report Details Page',
+                        style: TextStyle(
+                            fontSize: 30, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100], // Set box color to blue
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.arrow_back),
+                                  onPressed: () {
+                                    Navigator.pop(context); // Navigate back
+                                  },
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Back',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            // Build boxes in the specified order
+                            buildInfoBox("Issue", reportDetails['issue'],
+                                fullwidth: true),
+                            buildInfoBox("Location", reportDetails['location'],
+                                fullwidth: true),
+                            buildInfoBox(
+                              "Specific Location",
+                              reportDetails['specificLocation'],
+                              fullwidth: true,
+                            ),
+                            buildInfoBox(
+                              "Description",
+                              reportDetails['description'],
+                              halfWidth: true,
+                            ),
+                            buildInfoBox(
+                              "Status",
+                              reportDetails['status'],
+                              halfWidth: true,
+                            ),
+                            // Horizontal gray line
+                            Container(
+                              margin: EdgeInsets.symmetric(vertical: 20),
+                              height: 1,
+                              color: Colors.grey,
+                            ),
+                            // "Reported By" text
+                            Text(
+                              'Reported By',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            // Build boxes for "name" and "matric" side by side
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildInfoBox(
+                                      "Name", reportDetails['name'],
+                                      halfWidth: true),
+                                ),
+                                SizedBox(width: 20),
+                                Expanded(
+                                  child: buildInfoBox("Matric Number",
+                                      reportDetails['matricNumber'],
+                                      halfWidth: true),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            // Build boxes for "email" and "time" side by side
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: buildInfoBox(
+                                      "Email", reportDetails['userEmail'],
+                                      halfWidth: true),
+                                ),
+                                SizedBox(width: 20),
+                                Expanded(
+                                  child: buildInfoBox("Time",
+                                      _formatDate(reportDetails['time']),
+                                      halfWidth: true),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReportsListPage(),
+                                  ),
+                                );
+                              },
+                              child: Text('View Reports List'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  AppBar buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.green,
-      title: Row(
-        children: [
-          NotificationIcon(),
-          Spacer(),
-        ],
-      ),
-      iconTheme:
-          IconThemeData(color: Colors.white), // Set back button color to white
-      actions: [
-        CustomPopupMenu(),
+  Widget buildInfoBox(String title, String value,
+      {bool halfWidth = false, bool fullwidth = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: fullwidth ? double.infinity : (halfWidth ? 700 : null),
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 2),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+        SizedBox(height: 20),
       ],
     );
   }
 
-  Widget buildBody(BuildContext context) {
+  Widget buildEmptyBox() {
     return Container(
-      color: Colors.grey[200],
-      child: Row(
-        children: [
-          Sidebar(
-            onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(25),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  'Report Details Page',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ),
-        ],
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: SizedBox(
+        height: 20,
       ),
     );
   }
+}
 
-  void handleSidebarItemTap(BuildContext context, String title) {
-    if (title == 'Home') {
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(
-                    currentPage: 'Home',
-                  )));
+AppBar buildAppBar(BuildContext context) {
+  return AppBar(
+    backgroundColor: Colors.green,
+    title: Row(
+      children: [
+        NotificationIcon(),
+        Spacer(),
+      ],
+    ),
+    iconTheme: IconThemeData(color: Colors.white),
+    actions: [
+      CustomPopupMenu(),
+    ],
+  );
+}
+
+String _formatDate(Timestamp timestamp) {
+  DateTime dateTime = timestamp.toDate();
+  return DateFormat('dd/MM/yyyy hh:mm a').format(dateTime);
+}
+
+void handleSidebarItemTap(BuildContext context, String title) {
+  if (title == 'Home') {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(
+          currentPage: 'Home',
+        ),
+      ),
+    );
+    return;
+  }
+
+  switch (title) {
+    case 'Reports List':
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => ReportsListPage()));
+      break;
+    case 'Report Details':
+      // No need to navigate to the same page (Report Details Page)
       return;
-    }
-
-    switch (title) {
-      case 'Reports List':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportsListPage()));
-        break;
-      case 'Report Details':
-        // No need to navigate to the same page (Report Details Page)
-        return;
-      case 'User Information':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserInformationPage()));
-        break;
-      case 'User Profile':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserProfilePage(
-                userData: {}), // Provide default user data or adjust as needed
+    case 'User Information':
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => UserInformationPage()));
+      break;
+    case 'User Profile':
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserProfilePage(
+            userData: {},
           ),
-        );
-        break;
-    }
+        ),
+      );
+      break;
   }
 }
 
@@ -159,9 +334,7 @@ class CustomPopupMenu extends StatelessWidget {
           if (confirmLogout != null && confirmLogout) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      WelcomeScreen()), // Redirect to WelcomeScreen
+              MaterialPageRoute(builder: (context) => WelcomeScreen()),
             );
           }
         }

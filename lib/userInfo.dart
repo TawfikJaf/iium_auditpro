@@ -114,14 +114,30 @@ class UserInformationPage extends StatelessWidget {
         final _userDataTableSource =
             _UserDataTableSource(filteredData, context);
 
-        return PaginatedDataTable(
-          rowsPerPage: 10,
-          columns: [
-            DataColumn(label: Text('Name')),
-            DataColumn(label: Text('Matric Number')),
-            DataColumn(label: Text('')),
-          ],
-          source: _userDataTableSource,
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: PaginatedDataTable(
+            rowsPerPage: 10,
+            columns: [
+              DataColumn(
+                label: Text(
+                  'Name',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Matric Number',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(''),
+              ),
+            ],
+            source: _userDataTableSource,
+            dataRowHeight: 55, // Set your desired row height
+          ),
         );
       },
     );
@@ -242,11 +258,8 @@ void handleSidebarItemTap(BuildContext context, String title) {
       );
       break;
     case 'Report Details':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ReportDetailsPage()),
-      );
-      break;
+      // Do not navigate to ReportDetailsPage without selected data
+      return;
     case 'User Information':
       // No need to navigate to the same page (User Information Page)
       return;
