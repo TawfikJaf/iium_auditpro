@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
+import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(MyApp());
@@ -109,15 +111,32 @@ class HomePage extends StatelessWidget {
                   } else {
                     String welcomeMessage =
                         'Welcome ${firstName.isNotEmpty ? '$firstName ' : ''}to IIUM AuditPro Dashboard!';
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        welcomeMessage,
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          welcomeMessage,
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: double
+                              .infinity, // Use a fixed width or double.infinity
+                          child: buildSearchField(),
+                        ),
+                        SizedBox(height: 20),
+                        Expanded(
+                          child: SizedBox(
+                            width: 1700, // Set the desired width
+                            child: Container(
+                              child: buildPaginatedReportsTable(),
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   }
                 },
@@ -129,37 +148,266 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void handleSidebarItemTap(BuildContext context, String title) {
-    if (title == 'Home') {
+  Widget buildSearchField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Search',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: double.infinity, // Use a fixed width or double.infinity
+          child: TextField(
+            onChanged: (value) {
+              // Implement search functionality here
+              // You may want to update the StreamBuilder based on the search query
+            },
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 10),
+              hintText: 'Enter report name or location',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildPaginatedReportsTable() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Reports',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 10), // Adjust the spacing as needed
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: FutureBuilder(
+              future: _fetchReportsData(),
+              builder: (context,
+                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text('No reports available.');
+                }
+
+                List<Map<String, dynamic>> reportsData = snapshot.data!;
+
+                final _reportsDataTableSource = _ReportsDataTableSource(
+                  reportsData: reportsData,
+                  onViewDetails: (Map<String, dynamic> reportDetails) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ReportDetailsPage(reportDetails: reportDetails),
+                      ),
+                    );
+                  },
+                );
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: PaginatedDataTable(
+                    rowsPerPage: 10,
+                    columns: [
+                      DataColumn(
+                        label: Text(
+                          'Name',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Location',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Date',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Status',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Details',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                    source: _reportsDataTableSource,
+                    dataRowHeight: 50, // Set your desired row height
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchReportsData() async {
+    List<Map<String, dynamic>> combinedReportsData = [];
+
+    await _fetchCollectionData(
+        'reportsFacility', combinedReportsData, 'facility');
+    await _fetchCollectionData(
+        'reportsKulliyah', combinedReportsData, 'kulliyah');
+    await _fetchCollectionData(
+        'reportsMahallah', combinedReportsData, 'mahallah');
+    await _fetchCollectionData('reportsOther', combinedReportsData, 'other');
+
+    // TODO: Add any additional sorting, filtering, or customization if needed
+
+    return combinedReportsData;
+  }
+
+  Future<void> _fetchCollectionData(
+      String collectionName,
+      List<Map<String, dynamic>> combinedReportsData,
+      String locationFieldName) async {
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection(collectionName).get();
+
+    DateTime currentDate = DateTime.now();
+
+    querySnapshot.docs.forEach((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+      if (data.containsKey('time')) {
+        // Check if the 'time' field is present in the document
+        print('Timestamp field found: ${data['time']}');
+
+        // Ensure the 'time' field is not null
+        if (data['time'] != null) {
+          Timestamp timestamp = data['time'] as Timestamp;
+          print('Fetched Timestamp: $timestamp');
+
+          DateTime reportDate = timestamp.toDate();
+          Duration difference = currentDate.difference(reportDate);
+
+          if (difference.inDays <= 7) {
+            data['location'] = data[locationFieldName];
+            combinedReportsData.add(data);
+          }
+        } else {
+          print('Warning: Timestamp field is null.');
+        }
+      } else {
+        print('Warning: Timestamp field not found in the document.');
+      }
+    });
+
+    // Sort the list based on the timestamp in descending order
+    combinedReportsData.sort((a, b) {
+      Timestamp timestampA = a['time'] as Timestamp;
+      Timestamp timestampB = b['time'] as Timestamp;
+      return timestampB.compareTo(timestampA);
+    });
+  }
+}
+
+class _ReportsDataTableSource extends DataTableSource {
+  final List<Map<String, dynamic>> reportsData;
+  final Function(Map<String, dynamic>) onViewDetails;
+
+  _ReportsDataTableSource({
+    required this.reportsData,
+    required this.onViewDetails,
+  });
+
+  @override
+  DataRow getRow(int index) {
+    final Map<String, dynamic> data = reportsData[index];
+    final Timestamp timestamp = data['time'] as Timestamp;
+
+    return DataRow(
+      cells: [
+        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['location']?.toString() ?? 'N/A')),
+        DataCell(Text(_formatDate(timestamp))),
+        DataCell(Text(data['status']?.toString() ?? 'N/A')),
+        DataCell(
+          TextButton(
+            onPressed: () {
+              onViewDetails(data);
+            },
+            child: Text('View Details'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return DateFormat('dd/MM/yyyy').format(dateTime);
+  }
+
+  @override
+  int get rowCount => reportsData.length;
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get selectedRowCount => 0;
+}
+
+void handleSidebarItemTap(BuildContext context, String title) {
+  if (title == 'Home') {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(currentPage: 'Home'),
+      ),
+    );
+    return;
+  }
+
+  switch (title) {
+    case 'Reports':
+      // Navigate to Report List page
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(currentPage: 'Home'),
+          builder: (context) => ReportsListPage(),
         ),
       );
-      return;
-    }
-
-    switch (title) {
-      case 'Reports':
-        // Navigate to Report List page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReportsListPage(),
-          ),
-        );
-        break;
-      case 'Users':
-        // Navigate to UserInfo page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserInformationPage(),
-          ),
-        );
-        break;
-    }
+      break;
+    case 'Users':
+      // Navigate to UserInfo page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserInformationPage(),
+        ),
+      );
+      break;
   }
 }
 
