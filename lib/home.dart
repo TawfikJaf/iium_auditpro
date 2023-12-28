@@ -123,14 +123,13 @@ class HomePage extends StatelessWidget {
                         ),
                         SizedBox(height: 20),
                         Container(
-                          width: double
-                              .infinity, // Use a fixed width or double.infinity
+                          width: double.infinity,
                           child: buildSearchField(),
                         ),
                         SizedBox(height: 20),
                         Expanded(
                           child: SizedBox(
-                            width: 1700, // Set the desired width
+                            width: double.infinity, // Set the desired width
                             child: Container(
                               child: buildPaginatedReportsTable(),
                             ),
@@ -177,96 +176,99 @@ class HomePage extends StatelessWidget {
   }
 
   Widget buildPaginatedReportsTable() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Recent Reports',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 10), // Adjust the spacing as needed
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: FutureBuilder(
-              future: _fetchReportsData(),
-              builder: (context,
-                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
+    return FutureBuilder(
+      future: _fetchReportsData(),
+      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
 
-                if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                }
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Text('No reports available.');
-                }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text('No reports available.');
+        }
 
-                List<Map<String, dynamic>> reportsData = snapshot.data!;
+        List<Map<String, dynamic>> reportsData = snapshot.data!;
 
-                final _reportsDataTableSource = _ReportsDataTableSource(
-                  reportsData: reportsData,
-                  onViewDetails: (Map<String, dynamic> reportDetails) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ReportDetailsPage(reportDetails: reportDetails),
-                      ),
-                    );
-                  },
-                );
+        final _reportsDataTableSource = _ReportsDataTableSource(
+          reportsData: reportsData,
+          onViewDetails: (Map<String, dynamic> reportDetails) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ReportDetailsPage(reportDetails: reportDetails),
+              ),
+            );
+          },
+        );
 
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: PaginatedDataTable(
-                    rowsPerPage: 10,
-                    columns: [
-                      DataColumn(
-                        label: Text(
-                          'Name',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Location',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Date',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Status',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Details',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    source: _reportsDataTableSource,
-                    dataRowHeight: 50, // Set your desired row height
-                  ),
-                );
-              },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Recent Reports',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  '  (Last 7 Days)',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.normal),
+                ),
+              ],
             ),
-          ),
-        ),
-      ],
+            SizedBox(height: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: PaginatedDataTable(
+                  columnSpacing: 210, // Set your desired spacing value
+                  rowsPerPage: 10,
+                  columns: [
+                    DataColumn(
+                      label: Text(
+                        'Name',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Location',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Date',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Status',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        '   Details',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                  source: _reportsDataTableSource,
+                  dataRowHeight: 50, // Set your desired row height
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

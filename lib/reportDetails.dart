@@ -19,6 +19,97 @@ class ReportDetailsPage extends StatefulWidget {
 }
 
 class _ReportDetailsPageState extends State<ReportDetailsPage> {
+  String? newStatus;
+  Future<void> updateStatusAndShowDialog(String newStatus) async {
+    print('Updating status. New Status: $newStatus');
+
+    // Check if the status has changed
+    if (newStatus != widget.reportDetails['status']) {
+      print('Status has changed. Performing update.');
+
+      // Update the status in Firestore for each collection
+      for (final collectionName in [
+        'reportsFacility',
+        'reportsKulliyah',
+        'reportsMahallah',
+        'reportsOther',
+      ]) {
+        try {
+          // Query the collection to find matching documents
+          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+              .collection(collectionName)
+              .where('issue', isEqualTo: widget.reportDetails['issue'])
+              .where('description',
+                  isEqualTo: widget.reportDetails['description'])
+              .where('matricNumber',
+                  isEqualTo: widget.reportDetails['matricNumber'])
+              .get();
+
+          // Update the status in all matching documents
+          for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(doc.id)
+                .update({'status': newStatus});
+          }
+        } catch (error) {
+          print('Error updating status in $collectionName: $error');
+          // Handle error, show an error dialog if needed
+        }
+      }
+
+      // Update the local state with the new status
+      setState(() {
+        widget.reportDetails['status'] = newStatus;
+      });
+
+      print('Status updated successfully.');
+    } else {
+      print('Status remains unchanged.');
+
+      // Show a dialog indicating that the status remains unchanged
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('No Change'),
+            content: Text('Status remains unchanged.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+
+      return; // Exit the method without showing the success dialog
+    }
+
+    // Show a dialog indicating that the status has been updated
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Success'),
+          content: Text('Status updated successfully!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,26 +239,25 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                             SizedBox(height: 20),
                             Center(
                               child: SizedBox(
-                                width: 200, // Set the desired width
+                                width: 200,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    // Directly call the updateStatusAndShowDialog method
+                                    await updateStatusAndShowDialog(newStatus ??
+                                        widget.reportDetails['status']);
+                                  },
                                   style: ElevatedButton.styleFrom(
-                                    primary: Colors
-                                        .blue, // Set button background color to blue
+                                    primary: Colors.blue,
                                     padding: EdgeInsets.symmetric(
-                                        vertical: 20,
-                                        horizontal: 40), // Adjust padding
+                                        vertical: 20, horizontal: 40),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          30), // Adjust border radius
+                                      borderRadius: BorderRadius.circular(30),
                                     ),
                                   ),
                                   child: Text(
                                     'Save',
                                     style: TextStyle(
-                                        fontSize: 24,
-                                        color: Colors
-                                            .white), // Set text size and color
+                                        fontSize: 24, color: Colors.white),
                                   ),
                                 ),
                               ),
@@ -203,7 +293,8 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: DropdownButton<String>(
-            value: widget.reportDetails['status'],
+            value: newStatus ??
+                widget.reportDetails['status'], // Use newStatus here
             isExpanded: true,
             items: ['In progress', 'Approved', 'Declined', 'Solved']
                 .map<DropdownMenuItem<String>>(
@@ -218,9 +309,9 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
               // You can update the 'status' in your database or perform any other actions
               if (newValue != null &&
                   newValue != widget.reportDetails['status']) {
-                // Update the status in the reportDetails only if it's different
+                // Update the newStatus variable
                 setState(() {
-                  widget.reportDetails['status'] = newValue;
+                  newStatus = newValue;
                 });
               }
             },
