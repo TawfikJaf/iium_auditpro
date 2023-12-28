@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
-import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
 
@@ -287,29 +286,33 @@ class UserProfilePage extends StatelessWidget {
   void handleSidebarItemTap(BuildContext context, String title) {
     if (title == 'Home') {
       Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(
-                    currentPage: 'Home',
-                  )));
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(currentPage: 'Home'),
+        ),
+      );
       return;
     }
 
     switch (title) {
-      case 'Reports List':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportsListPage()));
+      case 'Reports':
+        // Navigate to Report List page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReportsListPage(),
+          ),
+        );
         break;
-      case 'Report Details':
-        // Do not navigate to ReportDetailsPage without selected data
-        return;
-      case 'User Information':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserInformationPage()));
+      case 'Users':
+        // Navigate to UserInfo page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserInformationPage(),
+          ),
+        );
         break;
-      case 'User Profile':
-        // No need to navigate to the same page (User Profile Page)
-        return;
     }
   }
 }

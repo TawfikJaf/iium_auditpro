@@ -6,15 +6,19 @@ import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
-import 'package:iium_auditpro/userProfile.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ReportDetailsPage extends StatelessWidget {
+class ReportDetailsPage extends StatefulWidget {
   final Map<String, dynamic> reportDetails;
 
   ReportDetailsPage({required this.reportDetails});
 
+  @override
+  _ReportDetailsPageState createState() => _ReportDetailsPageState();
+}
+
+class _ReportDetailsPageState extends State<ReportDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,7 +27,6 @@ class ReportDetailsPage extends StatelessWidget {
         color: Colors.grey[200], // Set the overall background color
         child: Row(
           children: [
-            // Fixed Sidebar
             Sidebar(
               onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
             ),
@@ -75,25 +78,25 @@ class ReportDetailsPage extends StatelessWidget {
                             ),
                             SizedBox(height: 20),
                             // Build boxes in the specified order
-                            buildInfoBox("Issue", reportDetails['issue'],
+                            buildInfoBox("Issue", widget.reportDetails['issue'],
                                 fullwidth: true),
-                            buildInfoBox("Location", reportDetails['location'],
+                            buildInfoBox(
+                                "Location", widget.reportDetails['location'],
                                 fullwidth: true),
                             buildInfoBox(
                               "Specific Location",
-                              reportDetails['specificLocation'],
+                              widget.reportDetails['specificLocation'],
                               fullwidth: true,
                             ),
                             buildInfoBox(
                               "Description",
-                              reportDetails['description'],
+                              widget.reportDetails['description'],
                               halfWidth: true,
                             ),
                             buildInfoBox(
-                              "Status",
-                              reportDetails['status'],
-                              halfWidth: true,
-                            ),
+                                "Status", widget.reportDetails['status'],
+                                halfWidth: true),
+
                             // Horizontal gray line
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 20),
@@ -114,13 +117,13 @@ class ReportDetailsPage extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: buildInfoBox(
-                                      "Name", reportDetails['name'],
+                                      "Name", widget.reportDetails['name'],
                                       halfWidth: true),
                                 ),
                                 SizedBox(width: 20),
                                 Expanded(
                                   child: buildInfoBox("Matric Number",
-                                      reportDetails['matricNumber'],
+                                      widget.reportDetails['matricNumber'],
                                       halfWidth: true),
                                 ),
                               ],
@@ -130,29 +133,44 @@ class ReportDetailsPage extends StatelessWidget {
                             Row(
                               children: [
                                 Expanded(
-                                  child: buildInfoBox(
-                                      "Email", reportDetails['userEmail'],
+                                  child: buildInfoBox("Email",
+                                      widget.reportDetails['userEmail'],
                                       halfWidth: true),
                                 ),
                                 SizedBox(width: 20),
                                 Expanded(
                                   child: buildInfoBox("Time",
-                                      _formatDate(reportDetails['time']),
+                                      _formatDate(widget.reportDetails['time']),
                                       halfWidth: true),
                                 ),
                               ],
                             ),
                             SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ReportsListPage(),
+                            Center(
+                              child: SizedBox(
+                                width: 200, // Set the desired width
+                                child: ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    primary: Colors
+                                        .blue, // Set button background color to blue
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 20,
+                                        horizontal: 40), // Adjust padding
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          30), // Adjust border radius
+                                    ),
                                   ),
-                                );
-                              },
-                              child: Text('View Reports List'),
+                                  child: Text(
+                                    'Save',
+                                    style: TextStyle(
+                                        fontSize: 24,
+                                        color: Colors
+                                            .white), // Set text size and color
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -168,8 +186,60 @@ class ReportDetailsPage extends StatelessWidget {
     );
   }
 
+  Widget buildStatusDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Status',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: 700, // Set a fixed width for the dropdown
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 2),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: DropdownButton<String>(
+            value: widget.reportDetails['status'],
+            isExpanded: true,
+            items: ['In progress', 'Approved', 'Declined', 'Solved']
+                .map<DropdownMenuItem<String>>(
+                  (String value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  ),
+                )
+                .toList(),
+            onChanged: (String? newValue) {
+              // Handle status change
+              // You can update the 'status' in your database or perform any other actions
+              if (newValue != null &&
+                  newValue != widget.reportDetails['status']) {
+                // Update the status in the reportDetails only if it's different
+                setState(() {
+                  widget.reportDetails['status'] = newValue;
+                });
+              }
+            },
+          ),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // Replace the buildInfoBox method with this updated version
   Widget buildInfoBox(String title, String value,
       {bool halfWidth = false, bool fullwidth = false}) {
+    if (title == 'Status') {
+      // Return the dropdown widget for "Status"
+      return buildStatusDropdown();
+    }
+
+    // Default behavior for other fields
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -182,7 +252,7 @@ class ReportDetailsPage extends StatelessWidget {
           width: fullwidth ? double.infinity : (halfWidth ? 700 : null),
           padding: EdgeInsets.all(15),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.black, width: 2),
+            border: Border.all(color: Colors.black, width: 0),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Text(
@@ -235,33 +305,28 @@ void handleSidebarItemTap(BuildContext context, String title) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => HomePage(
-          currentPage: 'Home',
-        ),
+        builder: (context) => HomePage(currentPage: 'Home'),
       ),
     );
     return;
   }
 
   switch (title) {
-    case 'Reports List':
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => ReportsListPage()));
-      break;
-    case 'Report Details':
-      // No need to navigate to the same page (Report Details Page)
-      return;
-    case 'User Information':
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => UserInformationPage()));
-      break;
-    case 'User Profile':
-      Navigator.push(
+    case 'Reports':
+      // Navigate to Report List page
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => UserProfilePage(
-            userData: {},
-          ),
+          builder: (context) => ReportsListPage(),
+        ),
+      );
+      break;
+    case 'Users':
+      // Navigate to UserInfo page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserInformationPage(),
         ),
       );
       break;

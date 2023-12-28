@@ -5,18 +5,18 @@ class SidebarItem extends StatefulWidget {
   final IconData? icon;
   final List<String>? subItems;
   final Function(String) onSubItemTap;
-  final bool isActive; // Add this line
+  final bool isActive;
   final bool keepSubMenuOpen;
-  final String? currentPage; // Add this line
+  final String? currentPage;
 
   SidebarItem({
     required this.title,
     required this.onSubItemTap,
     this.icon,
     this.subItems,
-    this.isActive = false, // Set a default value
-    this.keepSubMenuOpen = false, // Set a default value
-    this.currentPage, // Add this line
+    this.isActive = false,
+    this.keepSubMenuOpen = false,
+    this.currentPage,
   });
 
   @override
@@ -43,68 +43,33 @@ class _SidebarItemState extends State<SidebarItem> {
   }
 
   Widget buildItem(Color baseColor, Color hoverColor, bool isHoveredOrActive) {
-    if (widget.title == 'Home') {
-      return ListTile(
-        title: Row(
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon),
-              SizedBox(width: 8),
-            ],
-            Text(
-              widget.title,
-              style: TextStyle(
-                color: isHoveredOrActive ? hoverColor : baseColor,
-                fontSize: 20,
-                fontWeight:
-                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
-              ),
+    return ListTile(
+      title: Row(
+        children: [
+          if (widget.icon != null) ...[
+            Icon(
+              widget.icon,
+              size: 30, // Increase the icon size
+              color: isHoveredOrActive
+                  ? hoverColor
+                  : Colors.white, // Set icon color
             ),
+            SizedBox(width: 12), // Increase the spacing
           ],
-        ),
-        onTap: () {
-          widget.onSubItemTap(widget.title);
-        },
-      );
-    } else {
-      return ExpansionTile(
-        title: Row(
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon),
-              SizedBox(width: 8),
-            ],
-            Text(
-              widget.title,
-              style: TextStyle(
-                color: isHoveredOrActive ? hoverColor : baseColor,
-                fontSize: 20,
-                fontWeight:
-                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
-              ),
+          Text(
+            widget.title,
+            style: TextStyle(
+              color: isHoveredOrActive ? hoverColor : baseColor,
+              fontSize: 28, // Increase the font size
+              fontWeight:
+                  isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
             ),
-          ],
-        ),
-        iconColor: Colors.white,
-        initiallyExpanded: widget.keepSubMenuOpen,
-        children: (widget.subItems ?? []).map((subItem) {
-          return ListTile(
-            title: Text(
-              subItem,
-              style:
-                  TextStyle(color: isHoveredOrActive ? hoverColor : baseColor),
-            ),
-            onTap: () {
-              widget.onSubItemTap(subItem);
-            },
-          );
-        }).toList(),
-        onExpansionChanged: (isOpen) {
-          if (!widget.keepSubMenuOpen && !isOpen) {
-            setState(() => isHovered = false);
-          }
-        },
-      );
-    }
+          ),
+        ],
+      ),
+      onTap: () {
+        widget.onSubItemTap(widget.title);
+      },
+    );
   }
 }

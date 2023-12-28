@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
-import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userProfile.dart';
 
@@ -242,34 +241,28 @@ void handleSidebarItemTap(BuildContext context, String title) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => HomePage(
-          currentPage: 'Home',
-        ),
+        builder: (context) => HomePage(currentPage: 'Home'),
       ),
     );
     return;
   }
 
   switch (title) {
-    case 'Reports List':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ReportsListPage()),
-      );
-      break;
-    case 'Report Details':
-      // Do not navigate to ReportDetailsPage without selected data
-      return;
-    case 'User Information':
-      // No need to navigate to the same page (User Information Page)
-      return;
-    case 'User Profile':
-      Navigator.push(
+    case 'Reports':
+      // Navigate to Report List page
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => UserProfilePage(
-            userData: {}, // Provide default user data or adjust as needed
-          ),
+          builder: (context) => ReportsListPage(),
+        ),
+      );
+      break;
+    case 'Users':
+      // Navigate to UserInfo page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserInformationPage(),
         ),
       );
       break;

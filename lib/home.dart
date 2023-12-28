@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
-import 'package:iium_auditpro/reportDetails.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userInfo.dart';
-import 'package:iium_auditpro/userProfile.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -133,29 +131,31 @@ class HomePage extends StatelessWidget {
 
   void handleSidebarItemTap(BuildContext context, String title) {
     if (title == 'Home') {
-      // No need to navigate, already on the home page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(currentPage: 'Home'),
+        ),
+      );
       return;
     }
 
     switch (title) {
-      case 'Reports List':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => ReportsListPage()));
-        break;
-      case 'Report Details':
-        // Do not navigate to ReportDetailsPage without selected data
-        return;
-
-      case 'User Information':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => UserInformationPage()));
-        break;
-      case 'User Profile':
-        Navigator.push(
+      case 'Reports':
+        // Navigate to Report List page
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => UserProfilePage(
-                userData: {}), // Provide default user data or adjust as needed
+            builder: (context) => ReportsListPage(),
+          ),
+        );
+        break;
+      case 'Users':
+        // Navigate to UserInfo page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserInformationPage(),
           ),
         );
         break;
@@ -298,34 +298,29 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 40), // Add some spacing
           SidebarItem(
             title: 'Home',
             icon: Icons.home,
-            onSubItemTap: onSidebarItemTap,
+            onSubItemTap: (String title) => onSidebarItemTap(title),
             isActive: currentPage == 'Home',
-            currentPage: currentPage, // Pass the currentPage to SidebarItem
+            currentPage: currentPage,
           ),
+          SizedBox(height: 10), // Add some spacing
           SidebarItem(
             title: 'Reports',
             icon: Icons.library_books,
-            subItems: ['Reports List', 'Report Details'],
-            onSubItemTap: onSidebarItemTap,
-            isActive: currentPage == 'Reports List' ||
-                currentPage == 'Report Details',
-            keepSubMenuOpen: currentPage == 'Reports List' ||
-                currentPage == 'Report Details',
-            currentPage: currentPage, // Pass the currentPage to SidebarItem
+            onSubItemTap: (String title) => onSidebarItemTap(title),
+            isActive: currentPage == 'ReportsListPage',
+            currentPage: currentPage,
           ),
+          SizedBox(height: 10), // Add some spacing
           SidebarItem(
             title: 'Users',
             icon: Icons.supervised_user_circle,
-            subItems: ['User Information', 'User Profile'],
-            onSubItemTap: onSidebarItemTap,
-            isActive: currentPage == 'User Information' ||
-                currentPage == 'User Profile',
-            keepSubMenuOpen: currentPage == 'User Information' ||
-                currentPage == 'User Profile',
-            currentPage: currentPage, // Pass the currentPage to SidebarItem
+            onSubItemTap: (String title) => onSidebarItemTap(title),
+            isActive: currentPage == 'UserInformationPage',
+            currentPage: currentPage,
           ),
         ],
       ),
@@ -338,18 +333,18 @@ class SidebarItem extends StatefulWidget {
   final IconData? icon;
   final List<String>? subItems;
   final Function(String) onSubItemTap;
-  final bool isActive; // Add this line
+  final bool isActive;
   final bool keepSubMenuOpen;
-  final String? currentPage; // Add this line
+  final String? currentPage;
 
   SidebarItem({
     required this.title,
     required this.onSubItemTap,
     this.icon,
     this.subItems,
-    this.isActive = false, // Set a default value
-    this.keepSubMenuOpen = false, // Set a default value
-    this.currentPage, // Add this line
+    this.isActive = false,
+    this.keepSubMenuOpen = false,
+    this.currentPage,
   });
 
   @override
@@ -376,68 +371,33 @@ class _SidebarItemState extends State<SidebarItem> {
   }
 
   Widget buildItem(Color baseColor, Color hoverColor, bool isHoveredOrActive) {
-    if (widget.title == 'Home') {
-      return ListTile(
-        title: Row(
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon),
-              SizedBox(width: 8),
-            ],
-            Text(
-              widget.title,
-              style: TextStyle(
-                color: isHoveredOrActive ? hoverColor : baseColor,
-                fontSize: 20,
-                fontWeight:
-                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
-              ),
+    return ListTile(
+      title: Row(
+        children: [
+          if (widget.icon != null) ...[
+            Icon(
+              widget.icon,
+              size: 30, // Increase the icon size
+              color: isHoveredOrActive
+                  ? hoverColor
+                  : Colors.white, // Set icon color
             ),
+            SizedBox(width: 12), // Increase the spacing
           ],
-        ),
-        onTap: () {
-          widget.onSubItemTap(widget.title);
-        },
-      );
-    } else {
-      return ExpansionTile(
-        title: Row(
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon),
-              SizedBox(width: 8),
-            ],
-            Text(
-              widget.title,
-              style: TextStyle(
-                color: isHoveredOrActive ? hoverColor : baseColor,
-                fontSize: 20,
-                fontWeight:
-                    isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
-              ),
+          Text(
+            widget.title,
+            style: TextStyle(
+              color: isHoveredOrActive ? hoverColor : baseColor,
+              fontSize: 28, // Increase the font size
+              fontWeight:
+                  isHoveredOrActive ? FontWeight.bold : FontWeight.normal,
             ),
-          ],
-        ),
-        iconColor: Colors.white,
-        initiallyExpanded: widget.keepSubMenuOpen,
-        children: (widget.subItems ?? []).map((subItem) {
-          return ListTile(
-            title: Text(
-              subItem,
-              style:
-                  TextStyle(color: isHoveredOrActive ? hoverColor : baseColor),
-            ),
-            onTap: () {
-              widget.onSubItemTap(subItem);
-            },
-          );
-        }).toList(),
-        onExpansionChanged: (isOpen) {
-          if (!widget.keepSubMenuOpen && !isOpen) {
-            setState(() => isHovered = false);
-          }
-        },
-      );
-    }
+          ),
+        ],
+      ),
+      onTap: () {
+        widget.onSubItemTap(widget.title);
+      },
+    );
   }
 }
