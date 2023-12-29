@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
@@ -9,7 +10,14 @@ import 'package:iium_auditpro/userInfo.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ReportsListPage extends StatelessWidget {
+class ReportsListPage extends StatefulWidget {
+  @override
+  _ReportsListPageState createState() => _ReportsListPageState();
+}
+
+class _ReportsListPageState extends State<ReportsListPage> {
+  int selectedFilterIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,6 +66,8 @@ class ReportsListPage extends StatelessWidget {
                     child: buildSearchField(),
                   ),
                   SizedBox(height: 20),
+                  buildFilterSegmentedControl(), // Moved the filter here
+                  SizedBox(height: 1),
                   Expanded(
                     child: SizedBox(
                       width: 1700, // Set the desired width
@@ -171,7 +181,7 @@ class ReportsListPage extends StatelessWidget {
               ),
             ],
             source: _reportsDataTableSource,
-            dataRowHeight: 55, // Set your desired row height
+            dataRowHeight: 50, // Set your desired row height
           ),
         );
       },
@@ -189,9 +199,36 @@ class ReportsListPage extends StatelessWidget {
         'reportsMahallah', combinedReportsData, 'mahallah');
     await _fetchCollectionData('reportsOther', combinedReportsData, 'other');
 
-    // TODO: Add any additional sorting, filtering, or customization if needed
+    if (selectedFilterIndex != 0) {
+      String statusFilter = getStatusFilter(selectedFilterIndex);
+      combinedReportsData = combinedReportsData
+          .where((report) => report['status'] == statusFilter)
+          .toList();
+    }
+
+    combinedReportsData.sort((a, b) {
+      Timestamp timestampA = a['time'] as Timestamp;
+      Timestamp timestampB = b['time'] as Timestamp;
+      return timestampB.compareTo(timestampA);
+    });
 
     return combinedReportsData;
+  }
+
+  // Add the following method
+  String getStatusFilter(int index) {
+    switch (index) {
+      case 1:
+        return 'In progress';
+      case 2:
+        return 'Approved';
+      case 3:
+        return 'Declined';
+      case 4:
+        return 'Solved';
+      default:
+        return '';
+    }
   }
 
   Future<void> _fetchCollectionData(
@@ -222,13 +259,27 @@ class ReportsListPage extends StatelessWidget {
         print('Warning: Timestamp field not found in the document.');
       }
     });
+  }
 
-    // Sort the list based on the timestamp in descending order
-    combinedReportsData.sort((a, b) {
-      Timestamp timestampA = a['time'] as Timestamp;
-      Timestamp timestampB = b['time'] as Timestamp;
-      return timestampB.compareTo(timestampA);
-    });
+  Widget buildFilterSegmentedControl() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20),
+      child: CupertinoSlidingSegmentedControl<int>(
+        groupValue: selectedFilterIndex,
+        children: {
+          0: Text('All'),
+          1: Text('In progress'),
+          2: Text('Approved'),
+          3: Text('Declined'),
+          4: Text('Solved'),
+        },
+        onValueChanged: (index) {
+          setState(() {
+            selectedFilterIndex = index!;
+          });
+        },
+      ),
+    );
   }
 }
 
