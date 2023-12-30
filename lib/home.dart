@@ -48,7 +48,6 @@ class HomePage extends StatelessWidget {
       backgroundColor: Colors.green,
       title: Row(
         children: [
-          NotificationIcon(),
           Spacer(),
         ],
       ),
@@ -410,19 +409,6 @@ void handleSidebarItemTap(BuildContext context, String title) {
         ),
       );
       break;
-  }
-}
-
-class NotificationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(290),
-      child: Icon(
-        Icons.notifications,
-        color: Colors.white,
-      ),
-    );
   }
 }
 

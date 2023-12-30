@@ -185,7 +185,6 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Colors.green,
       title: Row(
         children: [
-          NotificationIcon(),
           Spacer(),
         ],
       ),
@@ -380,19 +379,6 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         break;
     }
-  }
-}
-
-class NotificationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(230),
-      child: Icon(
-        Icons.notifications,
-        color: Colors.white,
-      ),
-    );
   }
 }
 

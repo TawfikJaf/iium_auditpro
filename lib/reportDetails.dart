@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
@@ -115,13 +115,12 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
     return Scaffold(
       appBar: buildAppBar(context),
       body: Container(
-        color: Colors.grey[200], // Set the overall background color
+        color: Colors.grey[200],
         child: Row(
           children: [
             Sidebar(
               onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
             ),
-            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -137,7 +136,7 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                       SizedBox(height: 20),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[100], // Set box color to blue
+                          color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
@@ -157,7 +156,7 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                                 IconButton(
                                   icon: Icon(Icons.arrow_back),
                                   onPressed: () {
-                                    Navigator.pop(context); // Navigate back
+                                    Navigator.pop(context);
                                   },
                                 ),
                                 SizedBox(width: 8),
@@ -168,33 +167,27 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               ],
                             ),
                             SizedBox(height: 20),
-                            // Build boxes in the specified order
                             buildInfoBox("Issue", widget.reportDetails['issue'],
                                 fullwidth: true),
-                            buildInfoBox(
-                                "Location", widget.reportDetails['location'],
+                            buildLocationBox(
+                                widget.reportDetails['location'],
+                                widget.reportDetails['latitude'],
+                                widget.reportDetails['longitude'],
+                                halfWidth: true),
+                            buildInfoBox("Specific Location",
+                                widget.reportDetails['specificLocation'],
                                 fullwidth: true),
-                            buildInfoBox(
-                              "Specific Location",
-                              widget.reportDetails['specificLocation'],
-                              fullwidth: true,
-                            ),
-                            buildInfoBox(
-                              "Description",
-                              widget.reportDetails['description'],
-                              halfWidth: true,
-                            ),
+                            buildInfoBox("Description",
+                                widget.reportDetails['description'],
+                                halfWidth: true),
                             buildInfoBox(
                                 "Status", widget.reportDetails['status'],
                                 halfWidth: true),
-
-                            // Horizontal gray line
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 20),
                               height: 1,
                               color: Colors.grey,
                             ),
-                            // "Reported By" text
                             Text(
                               'Reported By',
                               style: TextStyle(
@@ -203,7 +196,6 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               ),
                             ),
                             SizedBox(height: 10),
-                            // Build boxes for "name" and "matric" side by side
                             Row(
                               children: [
                                 Expanded(
@@ -220,7 +212,6 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               ],
                             ),
                             SizedBox(height: 20),
-                            // Build boxes for "email" and "time" side by side
                             Row(
                               children: [
                                 Expanded(
@@ -242,7 +233,6 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                                 width: 200,
                                 child: ElevatedButton(
                                   onPressed: () async {
-                                    // Directly call the updateStatusAndShowDialog method
                                     await updateStatusAndShowDialog(newStatus ??
                                         widget.reportDetails['status']);
                                   },
@@ -273,6 +263,117 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildLocationBox(String location, double? latitude, double? longitude,
+      {bool halfWidth = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Location',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: halfWidth ? 700 : null,
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 0),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                location,
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+            SizedBox(
+                width: 10), // Add a little space between the field and button
+            if (location.toLowerCase() == 'other' &&
+                latitude != null &&
+                longitude != null)
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Location Details'),
+                        content: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Google Map Link:'),
+                            SelectableText(
+                              'https://maps.google.com/?q=$latitude,$longitude',
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                            SizedBox(height: 10),
+                            Text('Latitude: $latitude'),
+                            Text('Longitude: $longitude'),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('OK'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              // Open the URL in the default browser
+                              String mapsLink =
+                                  'https://maps.google.com/?q=$latitude,$longitude';
+                              if (await canLaunch(mapsLink)) {
+                                await launch(mapsLink);
+                              } else {
+                                // Handle error, show an error dialog if needed
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Error'),
+                                      content:
+                                          Text('Could not launch the URL.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                            child: Text('Open in Browser'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.blue, // Set the button color to blue
+                  padding: EdgeInsets.all(15), // Set the padding for the button
+                  fixedSize: Size(200, 50),
+                ),
+                child: Text(
+                  'View Location',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+        SizedBox(height: 20),
+      ],
     );
   }
 
@@ -322,15 +423,119 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
     );
   }
 
-  // Replace the buildInfoBox method with this updated version
   Widget buildInfoBox(String title, String value,
       {bool halfWidth = false, bool fullwidth = false}) {
     if (title == 'Status') {
-      // Return the dropdown widget for "Status"
       return buildStatusDropdown();
+    } else if (title == 'Description') {
+      return buildDescriptionBox(value, halfWidth: halfWidth);
+    } else {
+      return buildDefaultInfoBox(title, value,
+          halfWidth: halfWidth, fullwidth: fullwidth);
     }
+  }
 
-    // Default behavior for other fields
+  Widget buildDescriptionBox(String description, {bool halfWidth = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Description',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 5),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 700, // Set the width to 700
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 0),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    description,
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 5),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 15, // Add a little space between the field and button
+            ),
+            if (widget.reportDetails
+                .containsKey('image')) // Check if image field exists
+              ElevatedButton(
+                onPressed: () {
+                  _showImageDialog(context, widget.reportDetails['image']);
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.blue,
+                  padding: EdgeInsets.all(15),
+                  fixedSize: Size(200, 50),
+                ),
+                child: Text(
+                  'View Image',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget buildImageBox(String imageUrl) {
+    print(
+        'Building Image Box with URL: $imageUrl'); // Add this line for debugging
+
+    if (widget.reportDetails.containsKey('image')) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Image',
+            style: TextStyle(fontSize: 20),
+          ),
+          SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _showImageDialog(context, imageUrl);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.blue,
+                    padding: EdgeInsets.all(15),
+                  ),
+                  child: Text(
+                    'View Image',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              ),
+              SizedBox(width: 10),
+            ],
+          ),
+          SizedBox(height: 20),
+        ],
+      );
+    } else {
+      print('Image URL is null or empty'); // Add this line for debugging
+      return Container(); // Return an empty container if image URL is not available
+    }
+  }
+
+  Widget buildDefaultInfoBox(String title, String value,
+      {bool halfWidth = false, bool fullwidth = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,6 +561,57 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
     );
   }
 
+  void _showImageDialog(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Image URL'),
+          content: SelectableText(
+            imageUrl,
+            style: TextStyle(color: Colors.blue),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Open the URL in the default browser
+                if (await canLaunch(imageUrl)) {
+                  await launch(imageUrl);
+                } else {
+                  // Handle error, for example, show an error dialog
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Error'),
+                        content: Text('Could not launch the URL.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('OK'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              },
+              child: Text('Open in Browser'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget buildEmptyBox() {
     return Container(
       padding: EdgeInsets.all(10),
@@ -375,7 +631,6 @@ AppBar buildAppBar(BuildContext context) {
     backgroundColor: Colors.green,
     title: Row(
       children: [
-        NotificationIcon(),
         Spacer(),
       ],
     ),
@@ -421,19 +676,6 @@ void handleSidebarItemTap(BuildContext context, String title) {
         ),
       );
       break;
-  }
-}
-
-class NotificationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(230),
-      child: Icon(
-        Icons.notifications,
-        color: Colors.white,
-      ),
-    );
   }
 }
 

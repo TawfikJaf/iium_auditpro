@@ -17,6 +17,8 @@ class ReportsListPage extends StatefulWidget {
 
 class _ReportsListPageState extends State<ReportsListPage> {
   int selectedFilterIndex = 0;
+  int selectedLocationFilterIndex =
+      0; // Add this line to declare the new variable
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,6 @@ class _ReportsListPageState extends State<ReportsListPage> {
       backgroundColor: Colors.green,
       title: Row(
         children: [
-          NotificationIcon(),
           Spacer(),
         ],
       ),
@@ -61,12 +62,7 @@ class _ReportsListPageState extends State<ReportsListPage> {
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
-                  Container(
-                    width: 500,
-                    child: buildSearchField(),
-                  ),
-                  SizedBox(height: 20),
-                  buildFilterSegmentedControl(), // Moved the filter here
+                  buildFilterSegmentedControl(),
                   SizedBox(height: 1),
                   Expanded(
                     child: SizedBox(
@@ -82,34 +78,6 @@ class _ReportsListPageState extends State<ReportsListPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget buildSearchField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Search',
-          style: TextStyle(fontSize: 20),
-        ),
-        SizedBox(height: 8),
-        Container(
-          width: 500,
-          child: TextField(
-            onChanged: (value) {
-              // Implement search functionality here
-              // You may want to update the StreamBuilder based on the search query
-            },
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 10),
-              hintText: 'Enter report name or location',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -181,7 +149,7 @@ class _ReportsListPageState extends State<ReportsListPage> {
               ),
             ],
             source: _reportsDataTableSource,
-            dataRowHeight: 50, // Set your desired row height
+            dataRowHeight: 55, // Set your desired row height
           ),
         );
       },
@@ -191,13 +159,21 @@ class _ReportsListPageState extends State<ReportsListPage> {
   Future<List<Map<String, dynamic>>> _fetchReportsData() async {
     List<Map<String, dynamic>> combinedReportsData = [];
 
-    await _fetchCollectionData(
-        'reportsFacility', combinedReportsData, 'facility');
-    await _fetchCollectionData(
-        'reportsKulliyah', combinedReportsData, 'kulliyah');
-    await _fetchCollectionData(
-        'reportsMahallah', combinedReportsData, 'mahallah');
-    await _fetchCollectionData('reportsOther', combinedReportsData, 'other');
+    if (selectedLocationFilterIndex != 0) {
+      String collectionName = getCollectionName(selectedLocationFilterIndex);
+      String locationFieldName =
+          getLocationFieldName(selectedLocationFilterIndex);
+      await _fetchCollectionData(
+          collectionName, combinedReportsData, locationFieldName);
+    } else {
+      await _fetchCollectionData(
+          'reportsFacility', combinedReportsData, 'facility');
+      await _fetchCollectionData(
+          'reportsKulliyah', combinedReportsData, 'kulliyah');
+      await _fetchCollectionData(
+          'reportsMahallah', combinedReportsData, 'mahallah');
+      await _fetchCollectionData('reportsOther', combinedReportsData, 'other');
+    }
 
     if (selectedFilterIndex != 0) {
       String statusFilter = getStatusFilter(selectedFilterIndex);
@@ -215,7 +191,36 @@ class _ReportsListPageState extends State<ReportsListPage> {
     return combinedReportsData;
   }
 
-  // Add the following method
+  String getLocationFieldName(int index) {
+    switch (index) {
+      case 1:
+        return 'mahallah';
+      case 2:
+        return 'kulliyah';
+      case 3:
+        return 'facility';
+      case 4:
+        return 'other';
+      default:
+        return '';
+    }
+  }
+
+  String getCollectionName(int index) {
+    switch (index) {
+      case 1:
+        return 'reportsMahallah';
+      case 2:
+        return 'reportsKulliyah';
+      case 3:
+        return 'reportsFacility';
+      case 4:
+        return 'reportsOther';
+      default:
+        return '';
+    }
+  }
+
   String getStatusFilter(int index) {
     switch (index) {
       case 1:
@@ -232,9 +237,10 @@ class _ReportsListPageState extends State<ReportsListPage> {
   }
 
   Future<void> _fetchCollectionData(
-      String collectionName,
-      List<Map<String, dynamic>> combinedReportsData,
-      String locationFieldName) async {
+    String collectionName,
+    List<Map<String, dynamic>> combinedReportsData,
+    String locationFieldName,
+  ) async {
     QuerySnapshot querySnapshot =
         await FirebaseFirestore.instance.collection(collectionName).get();
 
@@ -250,7 +256,12 @@ class _ReportsListPageState extends State<ReportsListPage> {
           Timestamp timestamp = data['time'] as Timestamp;
           print('Fetched Timestamp: $timestamp');
 
-          data['location'] = data[locationFieldName];
+          if (locationFieldName.isNotEmpty &&
+              data.containsKey(locationFieldName)) {
+            // Only set 'location' if a specific locationFieldName is provided and exists in the document
+            data['location'] = data[locationFieldName];
+          }
+
           combinedReportsData.add(data);
         } else {
           print('Warning: Timestamp field is null.');
@@ -264,20 +275,58 @@ class _ReportsListPageState extends State<ReportsListPage> {
   Widget buildFilterSegmentedControl() {
     return Container(
       margin: EdgeInsets.only(bottom: 20),
-      child: CupertinoSlidingSegmentedControl<int>(
-        groupValue: selectedFilterIndex,
-        children: {
-          0: Text('All'),
-          1: Text('In progress'),
-          2: Text('Approved'),
-          3: Text('Declined'),
-          4: Text('Solved'),
-        },
-        onValueChanged: (index) {
-          setState(() {
-            selectedFilterIndex = index!;
-          });
-        },
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Status', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                CupertinoSlidingSegmentedControl<int>(
+                  groupValue: selectedFilterIndex,
+                  children: {
+                    0: Text('All'),
+                    1: Text('In progress'),
+                    2: Text('Approved'),
+                    3: Text('Declined'),
+                    4: Text('Solved'),
+                  },
+                  onValueChanged: (index) {
+                    setState(() {
+                      selectedFilterIndex = index!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Location', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                CupertinoSlidingSegmentedControl<int>(
+                  groupValue: selectedLocationFilterIndex,
+                  children: {
+                    0: Text('All'),
+                    1: Text('Mahallah'),
+                    2: Text('Kulliyah'),
+                    3: Text('Facility'),
+                    4: Text('Other'),
+                  },
+                  onValueChanged: (index) {
+                    setState(() {
+                      selectedLocationFilterIndex = index!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -297,10 +346,13 @@ class _ReportsDataTableSource extends DataTableSource {
     final Map<String, dynamic> data = reportsData[index];
     final Timestamp timestamp = data['time'] as Timestamp;
 
+    print('Location: ${data['location']}'); // Add this line for debugging
+
     return DataRow(
       cells: [
         DataCell(Text(data['name']?.toString() ?? 'N/A')),
-        DataCell(Text(data['location']?.toString() ?? 'N/A')),
+        DataCell(
+            Text(data['location']?.toString() ?? 'N/A')), // Update this line
         DataCell(Text(_formatDate(timestamp))),
         DataCell(Text(data['status']?.toString() ?? 'N/A')),
         DataCell(
@@ -360,19 +412,6 @@ void handleSidebarItemTap(BuildContext context, String title) {
         ),
       );
       break;
-  }
-}
-
-class NotificationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(230),
-      child: Icon(
-        Icons.notifications,
-        color: Colors.white,
-      ),
-    );
   }
 }
 

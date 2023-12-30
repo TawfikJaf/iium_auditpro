@@ -1,14 +1,21 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:iium_auditpro/home.dart';
 import 'package:iium_auditpro/main.dart';
 import 'package:iium_auditpro/profilePage.dart';
 import 'package:iium_auditpro/reportList.dart';
 import 'package:iium_auditpro/userProfile.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+class UserInformationPage extends StatefulWidget {
+  @override
+  _UserInformationPageState createState() => _UserInformationPageState();
+}
 
-class UserInformationPage extends StatelessWidget {
+class _UserInformationPageState extends State<UserInformationPage> {
+  TextEditingController searchController = TextEditingController();
+  Stream<QuerySnapshot>? _filteredStream;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,12 +29,10 @@ class UserInformationPage extends StatelessWidget {
       backgroundColor: Colors.green,
       title: Row(
         children: [
-          NotificationIcon(),
           Spacer(),
         ],
       ),
-      iconTheme:
-          IconThemeData(color: Colors.white), // Set back button color to white
+      iconTheme: IconThemeData(color: Colors.white),
       actions: [
         CustomPopupMenu(),
       ],
@@ -35,8 +40,6 @@ class UserInformationPage extends StatelessWidget {
   }
 
   Widget buildBody(BuildContext context) {
-    TextEditingController searchController = TextEditingController();
-
     return Container(
       color: Colors.grey[200],
       child: Row(
@@ -78,7 +81,7 @@ class UserInformationPage extends StatelessWidget {
 
   Widget buildPaginatedUserTable(TextEditingController searchController) {
     return StreamBuilder(
-      stream:
+      stream: _filteredStream ??
           FirebaseFirestore.instance.collection('User Information').snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -95,12 +98,10 @@ class UserInformationPage extends StatelessWidget {
 
         List<DocumentSnapshot> userData = snapshot.data!.docs;
 
-        // Perform case-insensitive sorting by name
         userData.sort((a, b) => (a['name'] as String)
             .toLowerCase()
             .compareTo((b['name'] as String).toLowerCase()));
 
-        // Apply search filter
         List<DocumentSnapshot> filteredData = userData.where((document) {
           Map<String, dynamic> data = document.data() as Map<String, dynamic>;
           String name = data['name']?.toString() ?? '';
@@ -135,11 +136,81 @@ class UserInformationPage extends StatelessWidget {
               ),
             ],
             source: _userDataTableSource,
-            dataRowHeight: 55, // Set your desired row height
+            dataRowHeight: 55,
           ),
         );
       },
     );
+  }
+
+  Widget buildSearchField(TextEditingController searchController) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Search',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: 500,
+          child: TextField(
+            controller: searchController,
+            onChanged: (value) {
+              updateStreamBasedOnSearchQuery(value);
+            },
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 10),
+              hintText: 'Enter Matric Number',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void updateStreamBasedOnSearchQuery(String searchQuery) {
+    Stream<QuerySnapshot> filteredStream = FirebaseFirestore.instance
+        .collection('User Information')
+        .where('matricNumber', isEqualTo: searchQuery)
+        .snapshots();
+
+    setState(() {
+      _filteredStream = filteredStream;
+    });
+  }
+
+  void handleSidebarItemTap(BuildContext context, String title) {
+    if (title == 'Home') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(currentPage: 'Home'),
+        ),
+      );
+      return;
+    }
+
+    switch (title) {
+      case 'Reports':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReportsListPage(),
+          ),
+        );
+        break;
+      case 'Users':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserInformationPage(),
+          ),
+        );
+        break;
+    }
   }
 }
 
@@ -162,7 +233,6 @@ class _UserDataTableSource extends DataTableSource {
         DataCell(
           TextButton(
             onPressed: () {
-              // Navigate to UserProfilePage with user data
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -204,82 +274,7 @@ class _UserDataTableSource extends DataTableSource {
     }
   }
 
-  int get rowsPerPage => 10; // Specify the number of rows per page
-}
-
-Widget buildSearchField(TextEditingController searchController) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'Search',
-        style: TextStyle(fontSize: 20),
-      ),
-      SizedBox(height: 8),
-      Container(
-        width: 500,
-        child: TextField(
-          controller: searchController,
-          onChanged: (value) {
-            // Implement search functionality here
-            // You may want to update the StreamBuilder based on the search query
-          },
-          decoration: InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 10),
-            hintText: 'Enter name or Matric Number',
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-void handleSidebarItemTap(BuildContext context, String title) {
-  if (title == 'Home') {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(currentPage: 'Home'),
-      ),
-    );
-    return;
-  }
-
-  switch (title) {
-    case 'Reports':
-      // Navigate to Report List page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ReportsListPage(),
-        ),
-      );
-      break;
-    case 'Users':
-      // Navigate to UserInfo page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => UserInformationPage(),
-        ),
-      );
-      break;
-  }
-}
-
-class NotificationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(230),
-      child: Icon(
-        Icons.notifications,
-        color: Colors.white,
-      ),
-    );
-  }
+  int get rowsPerPage => 10;
 }
 
 class CustomPopupMenu extends StatelessWidget {
