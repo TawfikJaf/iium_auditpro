@@ -161,7 +161,7 @@ class _UserInformationPageState extends State<UserInformationPage> {
             },
             decoration: InputDecoration(
               contentPadding: EdgeInsets.symmetric(horizontal: 10),
-              hintText: 'Enter Matric Number',
+              hintText: 'Enter User Matric Number',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),

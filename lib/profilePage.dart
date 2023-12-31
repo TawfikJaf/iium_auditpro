@@ -577,6 +577,13 @@ class _EditPasswordDialogState extends State<EditPasswordDialog> {
                   return;
                 }
 
+                // Check if the new password is less than 5 characters
+                if (newPassword.length < 5) {
+                  _showErrorDialog(
+                      context, 'Password can\'t be less than 5 characters');
+                  return;
+                }
+
                 if (newPassword != confirmPassword) {
                   _showErrorDialog(context, 'Passwords do not match');
                   return;

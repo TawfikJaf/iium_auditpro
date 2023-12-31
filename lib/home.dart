@@ -95,6 +95,12 @@ class HomePage extends StatelessWidget {
           Sidebar(
             onSidebarItemTap: (title) => handleSidebarItemTap(context, title),
           ),
+          VerticalDivider(
+            // Add a vertical divider here
+            color: Colors.black,
+            thickness: 1,
+            width: 1,
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(25),
@@ -121,14 +127,15 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 20),
-                        Container(
-                          width: double.infinity,
-                          child: buildSearchField(),
+                        Divider(
+                          // Add a horizontal divider here
+                          color: Colors.black,
+                          thickness: 1,
                         ),
                         SizedBox(height: 20),
                         Expanded(
                           child: SizedBox(
-                            width: double.infinity, // Set the desired width
+                            width: double.infinity,
                             child: Container(
                               child: buildPaginatedReportsTable(),
                             ),
@@ -143,34 +150,6 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget buildSearchField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Search',
-          style: TextStyle(fontSize: 20),
-        ),
-        SizedBox(height: 8),
-        Container(
-          width: double.infinity, // Use a fixed width or double.infinity
-          child: TextField(
-            onChanged: (value) {
-              // Implement search functionality here
-              // You may want to update the StreamBuilder based on the search query
-            },
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 10),
-              hintText: 'Enter report name or location',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -261,7 +240,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ],
                   source: _reportsDataTableSource,
-                  dataRowHeight: 50, // Set your desired row height
+                  dataRowHeight: 55, // Set your desired row height
                 ),
               ),
             ),
