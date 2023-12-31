@@ -172,14 +172,24 @@ class _UserInformationPageState extends State<UserInformationPage> {
   }
 
   void updateStreamBasedOnSearchQuery(String searchQuery) {
-    Stream<QuerySnapshot> filteredStream = FirebaseFirestore.instance
-        .collection('User Information')
-        .where('matricNumber', isEqualTo: searchQuery)
-        .snapshots();
+    if (searchQuery.isEmpty) {
+      // If the search query is empty, display the original data
+      setState(() {
+        _filteredStream = FirebaseFirestore.instance
+            .collection('User Information')
+            .snapshots();
+      });
+    } else {
+      // If there is a search query, filter the data from Firestore
+      Stream<QuerySnapshot> filteredStream = FirebaseFirestore.instance
+          .collection('User Information')
+          .where('matricNumber', isEqualTo: searchQuery)
+          .snapshots();
 
-    setState(() {
-      _filteredStream = filteredStream;
-    });
+      setState(() {
+        _filteredStream = filteredStream;
+      });
+    }
   }
 
   void handleSidebarItemTap(BuildContext context, String title) {
