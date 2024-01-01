@@ -116,7 +116,7 @@ class WelcomeScreen extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.only(left: 100),
                           child: Text(
-                            ' Together\n  making\nIIUM Better!',
+                            ' Together\n We make\nIIUM Better!',
                             style: TextStyle(
                               fontSize: 70,
                               fontWeight: FontWeight.bold,
