@@ -93,7 +93,8 @@ class UserProfilePage extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: buildInfoBox("Name", userData['name']),
+                              child: buildInfoBox("Name",
+                                  "${userData['FirstName']} ${userData['LastName']}"),
                             ),
                             SizedBox(width: 20),
                             Expanded(

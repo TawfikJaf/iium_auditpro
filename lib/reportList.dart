@@ -110,6 +110,9 @@ class _ReportsListPageState extends State<ReportsListPage> {
               ),
             );
           },
+          onDelete: (Map<String, dynamic> reportDetails) {
+            _showDeleteConfirmationDialog(reportDetails);
+          },
         );
 
         return SingleChildScrollView(
@@ -147,10 +150,147 @@ class _ReportsListPageState extends State<ReportsListPage> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+              DataColumn(
+                label: Text(
+                  '',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             source: _reportsDataTableSource,
-            dataRowHeight: 55, // Set your desired row height
+            dataRowHeight: 55,
           ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(Map<String, dynamic> reportDetails) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Delete Confirmation',
+            style: TextStyle(color: Colors.red),
+          ),
+          content: Text('Are you sure you want to delete this report?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the confirmation dialog
+                _deleteReport(context, reportDetails);
+                // Display the success popup directly
+                _showDeleteSuccessPopup(context, _refreshPage, _refreshPage);
+              },
+              child: Text(
+                'Yes',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteReport(
+      BuildContext context, Map<String, dynamic> reportDetails) async {
+    try {
+      List<String> collectionNames = [
+        'reportsMahallah',
+        'reportsKulliyah',
+        'reportsFacility',
+        'reportsOther',
+      ];
+
+      for (String collectionName in collectionNames) {
+        await _deleteReportFromCollection(
+            context, collectionName, reportDetails);
+      }
+
+      // Refresh the UI or perform any necessary actions after deletion
+
+      // Trigger a rebuild of the widget
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Report deleted successfully'),
+        ),
+      );
+      // You can also setState or use any other mechanism to update the UI after deletion
+    } catch (error) {
+      print('Error deleting report: $error');
+      // Handle errors, such as showing a snackbar or alerting the user
+    }
+  }
+
+  Future<void> _deleteReportFromCollection(BuildContext context,
+      String collectionName, Map<String, dynamic> reportDetails) async {
+    try {
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection(collectionName).get();
+
+      for (QueryDocumentSnapshot documentSnapshot in querySnapshot.docs) {
+        Map<String, dynamic> data =
+            documentSnapshot.data() as Map<String, dynamic>;
+
+        if (_areReportsEqual(data, reportDetails)) {
+          await FirebaseFirestore.instance
+              .collection(collectionName)
+              .doc(documentSnapshot.id)
+              .delete();
+          print('Report deleted from $collectionName collection');
+          return; // Stop searching if a match is found and deleted
+        }
+      }
+    } catch (error) {
+      print('Error deleting report from $collectionName collection: $error');
+      // Handle errors, such as showing a snackbar or alerting the user
+    }
+  }
+
+  bool _areReportsEqual(
+      Map<String, dynamic> report1, Map<String, dynamic> report2) {
+    // Compare relevant fields to determine if two reports are equal
+    return report1['FirstName'] == report2['FirstName'] &&
+        report1['time'] == report2['time'] &&
+        // Add other relevant fields for comparison
+        // ...
+        true; // Return true if all relevant fields match
+  }
+
+  void _refreshPage() {
+    setState(() {
+      // Add code here to refresh your page or table
+      print('Page or table refreshed');
+    });
+  }
+
+  void _showDeleteSuccessPopup(BuildContext context, VoidCallback onOKPressed,
+      VoidCallback refreshCallback) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Report Deleted'),
+          content: Text('The report has been successfully deleted.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                // Call the callback function to refresh the page or table
+                onOKPressed();
+                refreshCallback(); // Add this line to trigger the refresh
+              },
+              child: Text('OK'),
+            ),
+          ],
         );
       },
     );
@@ -335,10 +475,12 @@ class _ReportsListPageState extends State<ReportsListPage> {
 class _ReportsDataTableSource extends DataTableSource {
   final List<Map<String, dynamic>> reportsData;
   final Function(Map<String, dynamic>) onViewDetails;
+  final Function(Map<String, dynamic>) onDelete;
 
   _ReportsDataTableSource({
     required this.reportsData,
     required this.onViewDetails,
+    required this.onDelete,
   });
 
   @override
@@ -350,7 +492,7 @@ class _ReportsDataTableSource extends DataTableSource {
 
     return DataRow(
       cells: [
-        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['FirstName']?.toString() ?? 'N/A')),
         DataCell(
             Text(data['location']?.toString() ?? 'N/A')), // Update this line
         DataCell(Text(_formatDate(timestamp))),
@@ -361,6 +503,12 @@ class _ReportsDataTableSource extends DataTableSource {
               onViewDetails(data);
             },
             child: Text('View Details'),
+          ),
+        ),
+        DataCell(
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: () => onDelete(data),
           ),
         ),
       ],

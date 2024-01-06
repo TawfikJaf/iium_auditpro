@@ -33,6 +33,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Set this to false
         backgroundColor: Colors.white.withOpacity(0.8),
         elevation: 0,
         actions: [

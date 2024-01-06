@@ -98,13 +98,13 @@ class _UserInformationPageState extends State<UserInformationPage> {
 
         List<DocumentSnapshot> userData = snapshot.data!.docs;
 
-        userData.sort((a, b) => (a['name'] as String)
+        userData.sort((a, b) => (a['FirstName'] as String)
             .toLowerCase()
-            .compareTo((b['name'] as String).toLowerCase()));
+            .compareTo((b['FirstName'] as String).toLowerCase()));
 
         List<DocumentSnapshot> filteredData = userData.where((document) {
           Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          String name = data['name']?.toString() ?? '';
+          String name = data['FirstName']?.toString() ?? '';
           String matricNumber = data['matricNumber']?.toString() ?? '';
           String searchTerm = searchController.text.toLowerCase();
           return name.toLowerCase().contains(searchTerm) ||
@@ -238,7 +238,7 @@ class _UserDataTableSource extends DataTableSource {
 
     return DataRow(
       cells: [
-        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['FirstName']?.toString() ?? 'N/A')),
         DataCell(Text(data['matricNumber']?.toString() ?? 'N/A')),
         DataCell(
           TextButton(

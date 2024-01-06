@@ -200,8 +200,10 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
                               children: [
                                 Expanded(
                                   child: buildInfoBox(
-                                      "Name", widget.reportDetails['name'],
-                                      halfWidth: true),
+                                    "Name",
+                                    "${widget.reportDetails['FirstName']} ${widget.reportDetails['LastName']}",
+                                    halfWidth: true,
+                                  ),
                                 ),
                                 SizedBox(width: 20),
                                 Expanded(
@@ -469,10 +471,10 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
               width: 15, // Add a little space between the field and button
             ),
             if (widget.reportDetails
-                .containsKey('image')) // Check if image field exists
+                .containsKey('imageURL')) // Check if image field exists
               ElevatedButton(
                 onPressed: () {
-                  _showImageDialog(context, widget.reportDetails['image']);
+                  _showImageDialog(context, widget.reportDetails['imageURL']);
                 },
                 style: ElevatedButton.styleFrom(
                   primary: Colors.blue,
@@ -495,7 +497,7 @@ class _ReportDetailsPageState extends State<ReportDetailsPage> {
     print(
         'Building Image Box with URL: $imageUrl'); // Add this line for debugging
 
-    if (widget.reportDetails.containsKey('image')) {
+    if (widget.reportDetails.containsKey('imageURL')) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

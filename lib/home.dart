@@ -153,6 +153,11 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  String _formatDate(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return DateFormat('dd/MM/yyyy').format(dateTime);
+  }
+
   Widget buildPaginatedReportsTable() {
     return FutureBuilder(
       future: _fetchReportsData(),
@@ -182,69 +187,75 @@ class HomePage extends StatelessWidget {
               ),
             );
           },
+          formatDate: _formatDate,
         );
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Recent Reports',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  '  (Last 7 Days)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.normal),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: PaginatedDataTable(
-                  columnSpacing: 210, // Set your desired spacing value
-                  rowsPerPage: 10,
-                  columns: [
-                    DataColumn(
-                      label: Text(
-                        'Name',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Location',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Date',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Status',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        '   Details',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                  source: _reportsDataTableSource,
-                  dataRowHeight: 55, // Set your desired row height
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: PaginatedDataTable(
+            columns: [
+              DataColumn(
+                label: Text(
+                  'Name',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+              DataColumn(
+                label: Text(
+                  'Location',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Date',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Status',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+            source: _reportsDataTableSource,
+            rowsPerPage: 10,
+            header: Container(
+              decoration: BoxDecoration(
+                // Set decoration to null to remove the border
+                border: null,
+              ),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recent Reports ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
+                  ),
+                  Text(
+                    '(Last 7 Days)',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+            dataRowHeight: 55,
+            // Add other customization options as needed
+          ),
         );
       },
     );
@@ -314,10 +325,12 @@ class HomePage extends StatelessWidget {
 class _ReportsDataTableSource extends DataTableSource {
   final List<Map<String, dynamic>> reportsData;
   final Function(Map<String, dynamic>) onViewDetails;
+  final String Function(Timestamp) formatDate;
 
   _ReportsDataTableSource({
     required this.reportsData,
     required this.onViewDetails,
+    required this.formatDate,
   });
 
   @override
@@ -327,9 +340,9 @@ class _ReportsDataTableSource extends DataTableSource {
 
     return DataRow(
       cells: [
-        DataCell(Text(data['name']?.toString() ?? 'N/A')),
+        DataCell(Text(data['FirstName']?.toString() ?? 'N/A')),
         DataCell(Text(data['location']?.toString() ?? 'N/A')),
-        DataCell(Text(_formatDate(timestamp))),
+        DataCell(Text(formatDate(timestamp))), // Use the formatDate function
         DataCell(Text(data['status']?.toString() ?? 'N/A')),
         DataCell(
           TextButton(
@@ -341,11 +354,6 @@ class _ReportsDataTableSource extends DataTableSource {
         ),
       ],
     );
-  }
-
-  String _formatDate(Timestamp timestamp) {
-    DateTime dateTime = timestamp.toDate();
-    return DateFormat('dd/MM/yyyy').format(dateTime);
   }
 
   @override
