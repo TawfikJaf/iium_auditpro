@@ -453,7 +453,7 @@ class _ReportsListPageState extends State<ReportsListPage> {
                   children: {
                     0: Text('All'),
                     1: Text('Mahallah'),
-                    2: Text('Kulliyah'),
+                    2: Text('Kulliyyah'),
                     3: Text('Facility'),
                     4: Text('Other'),
                   },
